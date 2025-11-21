@@ -17,13 +17,10 @@ from api import set_service_fee_rate, get_service_fee_rate, get_user_tier_and_fe
 
 # ===== 봇 설정 =====
 TOKEN = 'MTQxOTI5NDY4NTQ3MzYL2OT2rf5BGCtBCqXhU8Mguh3C0OU'
-DEFAULT_ADMIN_ID = 1202376635128340
-# 슬래시 명령어 사용 가능한 사용자 ID (요청: 두 사용자만 허용)
-# 주어진 값이 동일하게 중복 제공되어도 한 명만 허용되는 것과 동일하게 동작합니다.
+DEFAULT_ADMIN_ID = 12023766351283
 ALLOWED_USER_IDS = [12023760, 1250580892537386]
 
-# 임베드 공통 썸네일(외부 이미지 이모지 대용)
-EMBED_ICON_URL = "https://encrypted-tbn0.gstatic.com/image6jLPhxp5TLkKPq1sfTvMADTF4A&s"
+EMBED_ICON_URL = "무조건 이미지를 불러올수있는 링크를 넣으세요"
 
 # ===== 충전 계좌 설정 =====
 DEPOSIT_BANK_NAME = "토스뱅크"
@@ -2343,4 +2340,5 @@ async def process_pass_verify_success(user_id):
     await send_verify_log(VERIFY_LOG_TITLE, description, 0x00ff00)
 
 if __name__ == "__main__":
+
     bot.run(TOKEN)
