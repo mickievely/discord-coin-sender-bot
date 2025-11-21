@@ -9,11 +9,11 @@ import urllib.parse
 # 웹훅 사용 제거
 
 # MEXC API 설정
-API_KEY = "mx0vg"
-SECRET_KEY = "92a35962c743a4"
+API_KEY = "" # api 설정
+SECRET_KEY = "" # 시크릿키 설정
 BASE_URL = "https://api.mexc.com"
 
-# 서비스 수수료율(기본 0.05 = 5%)
+# 서비스 수수료율(기본 0.05 = 5%) 
 SERVICE_FEE_RATE = 0.05
 
 def set_service_fee_rate(rate: float):
