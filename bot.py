@@ -23,9 +23,9 @@ ALLOWED_USER_IDS = [12023760, 1250580892537386]
 EMBED_ICON_URL = "무조건 이미지를 불러올수있는 링크를 넣으세요"
 
 # ===== 충전 계좌 설정 =====
-DEPOSIT_BANK_NAME = "토스뱅크"
-DEPOSIT_ACCOUNT_NO = "1908-9500-7239"
-DEPOSIT_ACCOUNT_HOLDER = "유경오"
+DEPOSIT_BANK_NAME = "계좌명"
+DEPOSIT_ACCOUNT_NO = "계좌번호"
+DEPOSIT_ACCOUNT_HOLDER = "계좌소유자이름"
 
 # ===== 채널 설정 =====
 # 구매 내역(예쁘게 표시): 사용자 공지용 채널
@@ -2342,3 +2342,4 @@ async def process_pass_verify_success(user_id):
 if __name__ == "__main__":
 
     bot.run(TOKEN)
+
