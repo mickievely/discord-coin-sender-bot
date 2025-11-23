@@ -1,4 +1,3 @@
-# coin.py - api.py의 함수들을 import하여 사용
 from api import (
     get_balance,
     get_all_balances,
@@ -29,8 +28,6 @@ from api import (
     init_coin_selenium,
     quit_driver
 )
-
-# api.py의 모든 함수들을 그대로 사용할 수 있도록 import
 __all__ = [
     'get_balance',
     'get_all_balances',
