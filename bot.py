@@ -1701,9 +1701,7 @@ async def on_modal_submit(interaction):
                         description=(
                             f"신청 금액: **₩{charge_amount:,}**\n\n"
                             "이 DM으로 입금 내역(문자 캡처/이체 스샷)을 보내주세요.\n"
-                            "- 이미지 또는 텍스트 모두 가능\n"
-                            "- 개인정보(계좌번호 일부)는 가려도 됩니다\n"
-                            "- 확인 후 직원이 승인 또는 거절 처리합니다"
+                            "- 무조건 이미지모두 가능\n"
                         ),
                         color=0x5865F2
                     )
@@ -2200,13 +2198,12 @@ async def on_message(message: disnake.Message):
                             await inter.response.send_modal(RejectReasonModal())
 
                     view = ChargeDecisionView(message.author.id, waiting_amount)
-                    # 원본 DM 내용/이미지도 함께 중계
                     try:
                         await forward_ch.send(embed=req_embed, view=view, files=files if files else None)
                     except Exception:
                         await forward_ch.send(embed=req_embed, view=view)
             except Exception as e:
-                logger.error(f"DM 포워딩 오류: {e}")
+                logger.error(f"DM send 오류 : {e}")
     except Exception as e:
         logger.error(f"on_message 오류: {e}")
     finally:
@@ -2342,4 +2339,5 @@ async def process_pass_verify_success(user_id):
 if __name__ == "__main__":
 
     bot.run(TOKEN)
+
 
