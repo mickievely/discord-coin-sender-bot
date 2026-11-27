@@ -46,9 +46,41 @@ function initSchema() {
       fee INTEGER DEFAULT 0
     );
   `);
+  ensureUserIdTextSchema(db);
   migrateLegacyUserIds(db);
   db.close();
   schemaReady = true;
+}
+
+/** 예전 스키마 INTEGER user_id → TEXT (node:sqlite 바인딩 오류 방지) */
+function ensureUserIdTextSchema(db) {
+  const info = db
+    .prepare(
+      "SELECT type FROM pragma_table_info('users') WHERE name = 'user_id'"
+    )
+    .get();
+  if (!info) return;
+  if (String(info.type).toUpperCase() === "TEXT") return;
+
+  db.exec(`
+    BEGIN IMMEDIATE;
+    CREATE TABLE users__id_text (
+      user_id TEXT PRIMARY KEY,
+      phone TEXT,
+      DOB TEXT,
+      name TEXT,
+      telecom TEXT,
+      Total_amount INTEGER DEFAULT 0,
+      now_amount INTEGER DEFAULT 0
+    );
+    INSERT INTO users__id_text
+      (user_id, phone, DOB, name, telecom, Total_amount, now_amount)
+    SELECT CAST(user_id AS TEXT), phone, DOB, name, telecom, Total_amount, now_amount
+    FROM users;
+    DROP TABLE users;
+    ALTER TABLE users__id_text RENAME TO users;
+    COMMIT;
+  `);
 }
 
 /** 예전 INTEGER user_id 행을 Discord snowflake 문자열로 맞춤 */
@@ -58,7 +90,7 @@ function migrateLegacyUserIds(db) {
     "UPDATE users SET user_id = ? WHERE rowid = ?"
   );
   const selRowid = db.prepare(
-    "SELECT rowid FROM users WHERE user_id = ? LIMIT 1"
+    `SELECT rowid FROM users WHERE ${SQL_USER_ID_MATCH} LIMIT 1`
   );
   for (const row of users) {
     const canonical = userIdKey(row.user_id);
@@ -91,53 +123,46 @@ function userIdKey(userId) {
   return String(userId);
 }
 
+/** node:sqlite가 INTEGER 컬럼에 ? 바인딩 시 Number 변환 → snowflake 범위 오류 방지 */
+const SQL_USER_ID_MATCH = "CAST(user_id AS TEXT) = ?";
+
 function getVerifiedUser(userId) {
   const key = userIdKey(userId);
   const row = getDb()
-    .prepare(
-      `SELECT * FROM users
-       WHERE user_id = ?
-          OR CAST(user_id AS TEXT) = ?
-       LIMIT 1`
-    )
-    .get(key, key);
+    .prepare(`SELECT * FROM users WHERE ${SQL_USER_ID_MATCH} LIMIT 1`)
+    .get(key);
   return row || null;
 }
 
 function addVerifiedUser(userId, phone = "", dob = "", name = "", telecom = "") {
+  const key = userIdKey(userId);
   getDb()
     .prepare(
       `INSERT OR REPLACE INTO users (user_id, phone, DOB, name, telecom, Total_amount, now_amount)
-       VALUES (?, ?, ?, ?, ?, COALESCE((SELECT Total_amount FROM users WHERE user_id = ?), 0),
-               COALESCE((SELECT now_amount FROM users WHERE user_id = ?), 0))`
+       VALUES (?, ?, ?, ?, ?, COALESCE((SELECT Total_amount FROM users WHERE ${SQL_USER_ID_MATCH}), 0),
+               COALESCE((SELECT now_amount FROM users WHERE ${SQL_USER_ID_MATCH}), 0))`
     )
-    .run(
-      userIdKey(userId),
-      phone,
-      dob,
-      name,
-      telecom,
-      userIdKey(userId),
-      userIdKey(userId)
-    );
+    .run(key, phone, dob, name, telecom, key, key);
 }
 
 function removeVerifiedUser(userId) {
-  getDb().prepare("DELETE FROM users WHERE user_id = ?").run(userIdKey(userId));
+  getDb()
+    .prepare(`DELETE FROM users WHERE ${SQL_USER_ID_MATCH}`)
+    .run(userIdKey(userId));
 }
 
 function addBalance(userId, amount, type = "충전") {
   const db = getDb();
   const uid = userIdKey(userId);
   const current = db
-    .prepare("SELECT Total_amount, now_amount FROM users WHERE user_id = ?")
+    .prepare(`SELECT Total_amount, now_amount FROM users WHERE ${SQL_USER_ID_MATCH}`)
     .get(uid);
 
   if (current) {
     const newTotal = current.Total_amount + amount;
     const newNow = current.now_amount + amount;
     db.prepare(
-      "UPDATE users SET Total_amount = ?, now_amount = ? WHERE user_id = ?"
+      `UPDATE users SET Total_amount = ?, now_amount = ? WHERE ${SQL_USER_ID_MATCH}`
     ).run(newTotal, newNow, uid);
   } else {
     db.prepare(
@@ -163,13 +188,13 @@ function subtractBalance(userId, amount) {
   }
 
   const current = db
-    .prepare("SELECT now_amount FROM users WHERE user_id = ?")
+    .prepare(`SELECT now_amount FROM users WHERE ${SQL_USER_ID_MATCH}`)
     .get(uid);
   if (!current || current.now_amount < amount) {
     return false;
   }
   db.prepare(
-    "UPDATE users SET now_amount = now_amount - ? WHERE user_id = ?"
+    `UPDATE users SET now_amount = now_amount - ? WHERE ${SQL_USER_ID_MATCH}`
   ).run(amount, uid);
   return true;
 }
@@ -191,7 +216,7 @@ function addTransactionHistory(
 function getTransactionHistory(userId, limit = 50) {
   return getDb()
     .prepare(
-      `SELECT * FROM transaction_history WHERE user_id = ?
+      `SELECT * FROM transaction_history WHERE ${SQL_USER_ID_MATCH}
        ORDER BY timestamp DESC LIMIT ?`
     )
     .all(userIdKey(userId), limit);
