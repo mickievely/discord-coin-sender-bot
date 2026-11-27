@@ -33,8 +33,6 @@ function parseServiceFeeFromEnv(raw) {
 
 const serviceFee = parseServiceFeeFromEnv(process.env.SERVICE_FEE_RATE);
 
-const KIMCHI_SYMBOL = (process.env.KIMCHI_SYMBOL || "BTC").toUpperCase();
-
 module.exports = {
   token: process.env.DISCORD_TOKEN || "",
   guildId: process.env.GUILD_ID || null,
@@ -63,19 +61,12 @@ module.exports = {
     admin: channelIdStr(process.env.CHANNEL_ADMIN_LOG),
   },
   panelMessageId: channelIdStr(process.env.PANEL_MESSAGE_ID),
-  kimchiSymbol: KIMCHI_SYMBOL,
-  kimchiUpbitTickerUrl:
-    process.env.KIMCHI_UPBIT_TICKER_URL ||
-    `https://api.upbit.com/v1/ticker?markets=KRW-${KIMCHI_SYMBOL}`,
-  kimchiGlobalPriceUrl:
-    process.env.KIMCHI_GLOBAL_PRICE_URL ||
-    `https://api.binance.com/api/v3/ticker/price?symbol=${KIMCHI_SYMBOL}USDT`,
-  kimchiUsdtKrwUrl:
-    process.env.KIMCHI_USDT_KRW_URL ||
+  usdKrwRateUrl:
+    process.env.USD_KRW_RATE_URL ||
     "https://api.upbit.com/v1/ticker?markets=KRW-USDT",
-  usdKrwExchangeUrl:
-    process.env.USD_KRW_EXCHANGE_URL ||
-    "https://api.exchangerate-api.com/v4/latest/USD",
+  kimchiPremiumUrl:
+    process.env.KIMCHI_PREMIUM_URL ||
+    "https://api.upbit.com/v1/ticker?markets=KRW-BTC",
   upbitTickerBaseUrl:
     process.env.UPBIT_TICKER_BASE_URL ||
     "https://api.upbit.com/v1/ticker?markets=",

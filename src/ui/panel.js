@@ -30,7 +30,12 @@ async function stockLines() {
 }
 
 async function buildPanelPayload(refreshLabel) {
-  const kimchi = await exchange.getKimchiPremium();
+  let kimchi = 0;
+  try {
+    kimchi = await exchange.getKimchiPremium();
+  } catch (e) {
+    console.error("김프 조회 실패:", e.message);
+  }
   const stock = await stockLines();
   const fee = (config.serviceFeeRate * 100).toFixed(1);
 

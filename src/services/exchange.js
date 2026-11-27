@@ -23,54 +23,62 @@ const UPBIT_MARKET = {
   LTC: "LTC-KRW",
 };
 
+/** 김프 계산용 글로벌 BTC (고정 1곳, env 추가 없음) */
+const BINANCE_BTC_USDT_URL =
+  "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
+
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, { ...options, signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
-async function getUsdtKrwFromUpbit() {
-  const url = config.kimchiUsdtKrwUrl;
-  if (!url) return 0;
-  const data = await fetchJson(url);
-  const row = Array.isArray(data) ? data[0] : data;
-  const p = row?.trade_price;
-  return p > 0 ? p : 0;
+function parseDirectKimchi(raw) {
+  if (raw == null) return null;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string" && raw.trim() && Number.isFinite(Number(raw))) {
+    return Number(raw);
+  }
+  const n =
+    raw.premium_percent ??
+    raw.kimchi_premium ??
+    raw.premium ??
+    raw.kimchi ??
+    raw.data?.premium_percent;
+  if (n != null && Number.isFinite(Number(n))) return Number(n);
+  return null;
 }
 
+/** 환율: USD_KRW_RATE_URL 1회만 */
 async function getExchangeRate() {
-  try {
-    const usdtKrw = await getUsdtKrwFromUpbit();
-    if (usdtKrw > 0) return usdtKrw;
-    const data = await fetchJson(config.usdKrwExchangeUrl);
-    const rate =
-      data?.rates?.KRW ??
-      data?.data?.rates?.KRW ??
-      data?.result?.KRW;
-    return rate > 0 ? rate : 1350;
-  } catch {
-    return 1350;
-  }
+  const data = await fetchJson(config.usdKrwRateUrl);
+  const row = Array.isArray(data) ? data[0] : data;
+  const rate = row?.trade_price ?? row?.rate ?? row?.KRW;
+  if (!rate || rate <= 0) throw new Error("환율 없음");
+  return rate;
 }
 
+/**
+ * 김치프리미엄: KIMCHI_PREMIUM_URL 1회
+ * - JSON에 premium_percent 등 있으면 그대로 사용
+ * - Upbit KRW-BTC 티커면 글로벌은 Binance BTCUSDT 1회로 계산 (env는 1개만)
+ */
 async function getKimchiPremium() {
-  try {
-    const upbit = await fetchJson(config.kimchiUpbitTickerUrl);
-    const globalTicker = await fetchJson(config.kimchiGlobalPriceUrl);
-    const upbitPrice = upbit[0]?.trade_price;
-    const binanceUsd =
-      parseFloat(globalTicker.price) ||
-      parseFloat(globalTicker?.data?.price) ||
-      0;
-    if (!upbitPrice || !binanceUsd) throw new Error("가격 없음");
+  const data = await fetchJson(config.kimchiPremiumUrl);
+  const direct = parseDirectKimchi(data);
+  if (direct != null) return Number(direct.toFixed(2));
 
-    const krwPerUsd = await getUsdtKrwFromUpbit();
-    const fx = krwPerUsd > 0 ? krwPerUsd : await getExchangeRate();
-    const globalKrw = binanceUsd * fx;
-    return Number((((upbitPrice - globalKrw) / globalKrw) * 100).toFixed(2));
-  } catch {
-    return 0;
-  }
+  const upbitRow = Array.isArray(data) ? data[0] : data;
+  const upbitBtc = upbitRow?.trade_price;
+  if (!upbitBtc) throw new Error("김프(업비트) 가격 없음");
+
+  const global = await fetchJson(BINANCE_BTC_USDT_URL);
+  const binanceUsd = parseFloat(global.price);
+  if (!binanceUsd) throw new Error("김프(글로벌) 가격 없음");
+
+  const fx = await getExchangeRate();
+  const globalKrw = binanceUsd * fx;
+  return Number((((upbitBtc - globalKrw) / globalKrw) * 100).toFixed(2));
 }
 
 async function getUpbitCoinPriceUsd(coin) {
@@ -118,8 +126,15 @@ async function getAllCoinPrices() {
 
 async function getMinimumAmountsKrw() {
   const prices = await getAllCoinPrices();
-  const krwRate = await getExchangeRate();
-  const kimchi = await getKimchiPremium();
+  let krwRate = 0;
+  let kimchi = 0;
+  try {
+    krwRate = await getExchangeRate();
+    kimchi = await getKimchiPremium();
+  } catch {
+    krwRate = 1350;
+    kimchi = 0;
+  }
   const actualRate = krwRate * (1 + kimchi / 100);
   const out = {};
   for (const [coin, min] of Object.entries(MIN_COIN)) {
