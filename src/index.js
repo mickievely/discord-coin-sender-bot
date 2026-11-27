@@ -46,7 +46,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
     if (interaction.isButton()) {
-      await handleButton(interaction);
+      await handleButton(interaction, client);
       return;
     }
     if (interaction.isStringSelectMenu()) {
@@ -54,7 +54,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
     if (interaction.isModalSubmit()) {
-      await handleModal(interaction);
+      await handleModal(interaction, client);
     }
   } catch (err) {
     console.error("interaction error:", err);

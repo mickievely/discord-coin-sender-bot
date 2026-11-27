@@ -38,9 +38,19 @@ npm start
 
 Windows: `start.bat`
 
-## PASS 본인인증
+## PASS 본인인증 (NICE CheckPlus)
 
-Python `pass_verify` 모듈은 제거되었습니다. Node에 PASS API 연동을 추가하거나 **`/강제인증`** 으로 운영하세요.
+`src/services/niceApi.js` — 대법원 BSB 경유 NICE SMS 본인인증.
+
+패널 **본인인증** → 통신사 → 캡차 이미지 → 정보 모달 → SMS 코드.
+
+연동 테스트 (캡차만 수집):
+
+```bash
+npm run test:nice -- SK
+```
+
+실패 시 `captcha/test-SK.png` 생성 여부와 콘솔 로그를 확인하세요.
 
 ## 레거시
 

@@ -12,7 +12,8 @@ const exchange = require("../services/exchange");
 const mexc = require("../services/mexc");
 const { getServiceFeeRate } = require("../services/fees");
 const { pendingTx } = require("../state/pending");
-const { buildV2Payload, replyV2, updateV2 } = require("../ui/v2");
+const { buildV2Payload, updateV2 } = require("../ui/v2");
+const verifyHandler = require("./verify");
 
 async function ephemeralV2(interaction, options) {
   if (!interaction.deferred && !interaction.replied) {
@@ -54,17 +55,15 @@ async function showVerifyRequired(interaction) {
   });
 }
 
-async function handleButton(interaction) {
+async function handleButton(interaction, client) {
   const id = interaction.customId;
 
-  if (id === "start_verify") {
-    return ephemeralV2(interaction, {
-      lines: [
-        "**PASS 본인인증**",
-        "Node 버전에서는 `pass_verify` 연동이 아직 설정되지 않았습니다.",
-        "관리자에게 **강제인증**을 요청하거나 PASS API 모듈을 추가해 주세요.",
-      ],
-    });
+  if (
+    id === "start_verify" ||
+    id.startsWith("verify_")
+  ) {
+  const handled = await verifyHandler.routeVerifyButton(interaction, id);
+    if (handled !== false) return handled;
   }
 
   const needsVerify = [
@@ -276,7 +275,14 @@ async function handleSelect(interaction) {
   return null;
 }
 
-async function handleModal(interaction) {
+async function handleModal(interaction, client) {
+  if (interaction.customId === "verify_info_modal") {
+    return verifyHandler.onInfoModal(interaction);
+  }
+  if (interaction.customId === "verify_code_modal") {
+    return verifyHandler.onCodeModal(interaction, client);
+  }
+
   if (interaction.customId === "charge_modal") {
     await interaction.deferReply({ ephemeral: true });
     const raw = interaction.fields.getTextInputValue("charge_amount");
@@ -360,7 +366,7 @@ async function handleModal(interaction) {
     return interaction.editReply(
       require("../ui/v2").buildV2Payload({
         lines: [
-          `**${coin.toUpperCase()} 송금 준비**",
+          `**${coin.toUpperCase()} 송금 준비**`,
           `차감: ₩${Math.floor(krw).toLocaleString("ko-KR")}`,
           `예상 송금: ${sendAmount.toFixed(6)} ${coin.toUpperCase()}`,
           `수수료 합: ₩${Math.floor(totalFee).toLocaleString("ko-KR")}`,

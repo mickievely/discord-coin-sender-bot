@@ -6,13 +6,18 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "init-db": "node scripts/init-db.js"
+    "init-db": "node scripts/init-db.js",
+    "test:nice": "node scripts/test-nice-init.js"
   },
   "engines": {
     "node": ">=22.5.0"
   },
   "dependencies": {
+    "axios": "^1.7.9",
+    "axios-cookiejar-support": "^5.0.5",
     "discord.js": "^14.19.2",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "qs": "^6.13.1",
+    "tough-cookie": "^5.0.0"
   }
 }
