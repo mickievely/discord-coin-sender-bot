@@ -20,7 +20,8 @@ Write messages in English or Korean; keep the prefix and a short imperative summ
 ## When to commit
 
 - After any tracked file is modified for this task, create a commit before ending the turn (unless the user asked for no commit).
-- Do not commit `config.py`, secrets, `.env`, `DB/`, logs, or `captcha/`.
+- Do not commit secrets, `.env`, `.env.example`, `config.py`, `DB/`, logs, or `captcha/`.
+- Configuration keys live only in the local `.env` (see repo root file); never add example env files to git.
 - Never change global or local `git config` for user identity; use `git -c user.name=... -c user.email=...` only if commit would otherwise fail.
 
 ## When to push
