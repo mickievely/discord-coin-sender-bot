@@ -27,6 +27,7 @@ Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(
 - **비밀값**: 토큰·시크릿·API 키·계좌 정보는 `.env` 또는 `test/.env`에만 둔다. 코드, 커밋, README, 로그 출력에 절대 넣지 않는다
 - `test/`는 gitignore된 로컬 테스트 공간. 테스트용 스크립트·설정은 여기 만들고, 실제 수정은 `src/`에 한다
 - `.env.example` 같은 예시 env 파일은 만들지 않는다. 새 키가 생기면 `src/config.js`에 추가하고 사용자에게 알린다
+- `PANEL_MESSAGE_ID`는 패널 새 게시 시 `src/lib/envFile.js`가 `test/.env`(또는 `ENV_FILE`/루트 `.env`)에 자동 기록
 - 권한 있는 인텐트(MessageContent, GuildMembers, GuildPresences)는 꼭 필요할 때만 추가한다. 추가하면 개발자 포털에서 켜야 한다고 알린다
 - 슬래시 커맨드 옵션은 반드시 `setName` + `setDescription` 둘 다 있어야 한다 (없으면 등록 실패)
 - 돈·코인이 움직이는 로직(송금, 충전, 출금, 수수료)은 서버 측에서 금액·권한·잔액을 검증하고, 처리 내역은 `history.db`와 로그 채널에 남긴다
