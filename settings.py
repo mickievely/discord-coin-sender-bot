@@ -1,0 +1,57 @@
+"""Runtime settings from config.py (see config.example.py)."""
+import sys
+
+try:
+    import config
+except ImportError:
+    print(
+        "config.py가 없습니다. config.example.py를 config.py로 복사하고 설정하세요.",
+        file=sys.stderr,
+    )
+    raise
+
+
+def _get(name: str, default=None):
+    return getattr(config, name, default)
+
+
+TOKEN = _get("TOKEN")
+DEFAULT_ADMIN_ID = _get("DEFAULT_ADMIN_ID")
+ALLOWED_USER_IDS = _get("ALLOWED_USER_IDS", [])
+
+EMBED_ICON_URL = _get("EMBED_ICON_URL", "")
+SERVICE_DISPLAY_NAME = _get("SERVICE_DISPLAY_NAME", "코인대행")
+
+DEPOSIT_BANK_NAME = _get("DEPOSIT_BANK_NAME", "")
+DEPOSIT_ACCOUNT_NO = _get("DEPOSIT_ACCOUNT_NO", "")
+DEPOSIT_ACCOUNT_HOLDER = _get("DEPOSIT_ACCOUNT_HOLDER", "")
+
+CHANNEL_PURCHASE_LOG = _get("CHANNEL_PURCHASE_LOG", 0)
+CHANNEL_TRANSFER_LOG = _get("CHANNEL_TRANSFER_LOG", 0)
+CHANNEL_VERIFY_LOG = _get("CHANNEL_VERIFY_LOG", 0)
+CHANNEL_CHARGE_LOG = _get("CHANNEL_CHARGE_LOG", 0)
+CHANNEL_ADMIN_LOG = _get("CHANNEL_ADMIN_LOG", 0)
+CHANNEL_DEPOSIT_LOG = _get("CHANNEL_DEPOSIT_LOG", 0)
+
+COIN_ADDRESSES = _get("COIN_ADDRESSES", {})
+
+PURCHASE_LOG_TITLE = _get("PURCHASE_LOG_TITLE", "🎉 대행 이용")
+PURCHASE_LOG_DESCRIPTION = _get("PURCHASE_LOG_DESCRIPTION", "{amount:,}원")
+PURCHASE_LOG_FOOTER = _get("PURCHASE_LOG_FOOTER", SERVICE_DISPLAY_NAME)
+
+VERIFY_LOG_TITLE = _get("VERIFY_LOG_TITLE", "✅ PASS 인증 완료")
+VERIFY_LOG_DESCRIPTION = _get("VERIFY_LOG_DESCRIPTION", "{user_id}")
+
+CHARGE_REQUEST_TITLE = _get("CHARGE_REQUEST_TITLE", "💰 충전 요청")
+CHARGE_REQUEST_DESCRIPTION = _get("CHARGE_REQUEST_DESCRIPTION", "")
+
+CHARGE_APPROVE_TITLE = _get("CHARGE_APPROVE_TITLE", "✅ 충전 승인")
+CHARGE_APPROVE_DESCRIPTION = _get("CHARGE_APPROVE_DESCRIPTION", "")
+
+CHARGE_REJECT_TITLE = _get("CHARGE_REJECT_TITLE", "❌ 충전 거절")
+CHARGE_REJECT_DESCRIPTION = _get("CHARGE_REJECT_DESCRIPTION", "")
+
+TRANSFER_LOG_TITLE = _get("TRANSFER_LOG_TITLE", "💸 송금 완료")
+TRANSFER_LOG_DESCRIPTION = _get("TRANSFER_LOG_DESCRIPTION", "")
+
+LOG_FILE = _get("LOG_FILE", "bot.log")

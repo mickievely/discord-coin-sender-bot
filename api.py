@@ -276,112 +276,6 @@ def mexc_swap_coins(from_coin, to_coin, amount):
         return {'success': False, 'error': f'스왑 오류: {str(e)}'}
 
 def simple_send_coin(target_coin, amount, address, network):
-    """모든 코인 재고를 활용하여 목표 코인으로 Convert 후 송금"""
-    if not API_KEY or not SECRET_KEY:
-        return {'success': False, 'error': 'API 키가 설정되지 않았습니다'}
-    
-    try:
-        # 현재 모든 코인 잔액 확인
-        balances = get_all_balances()
-        prices = get_all_coin_prices()
-        target_balance = balances.get(target_coin.upper(), 0)
-        
-        print(f"Debug: 목표 코인={target_coin.upper()}, 필요량={amount}, 현재잔액={target_balance}")
-        
-        # 목표 코인이 충분하면 바로 송금
-        if target_balance >= amount:
-            print(f"Debug: {target_coin.upper()} 잔액 충분, 바로 송금")
-            return send_coin_transaction(amount, address, network, target_coin)
-        
-        # 목표 코인이 부족하면 다른 코인들을 USDT로 Convert 후 목표 코인으로 Convert
-        target_price = prices.get(target_coin.upper(), 0)
-        if target_price <= 0:
-            return {'success': False, 'error': f'{target_coin.upper()} 가격 조회 실패'}
-        
-        needed_usdt = amount * target_price
-        current_usdt = balances.get('USDT', 0)
-        
-        print(f"Debug: 필요 USDT={needed_usdt:.2f}, 현재 USDT={current_usdt:.2f}")
-        
-        # Convert 우선순위: USDT > BNB > TRX > LTC
-        convert_priority = ['USDT', 'BNB', 'TRX', 'LTC']
-        
-        # 1단계: USDT가 충분한지 먼저 확인
-        if current_usdt >= needed_usdt:
-            print(f"Debug: 1단계 - USDT 충분 ({current_usdt:.2f} >= {needed_usdt:.2f})")
-            # Convert API가 작동하지 않으므로 USDT로 직접 송금
-            print(f"Debug: Convert API 미지원으로 USDT로 직접 송금")
-            return send_coin_transaction(needed_usdt, address, 'bep20', 'USDT', skip_min_check=True, skip_address_check=True)
-        
-        # 2단계: 다른 코인들을 USDT로 Convert 후 USDT 송금
-        print(f"Debug: 2단계 - 다른 코인들을 USDT로 Convert")
-        total_usdt = current_usdt
-        convert_log = []
-        
-        for coin in convert_priority:
-            if coin == 'USDT' or coin == target_coin.upper():
-                continue
-                
-            coin_balance = balances.get(coin, 0)
-            if coin_balance <= 0:
-                continue
-                
-            coin_price = prices.get(coin, 0)
-            if coin_price <= 0:
-                continue
-            
-            print(f"Debug: {coin} {coin_balance:.6f}을 USDT로 Convert 시도 (시뮬레이션)")
-            # 이 코인을 USDT로 Convert (시뮬레이션)
-            convert_result = mexc_swap_coins(coin, 'USDT', coin_balance)
-            if convert_result and convert_result.get('success', False):
-                converted_usdt = convert_result.get('swapped_amount', 0)
-                total_usdt += converted_usdt
-                convert_log.append(f"{coin} {coin_balance:.6f} → USDT {converted_usdt:.2f}")
-                print(f"Debug: {coin} Convert 성공, 총 USDT: {total_usdt:.2f}")
-            else:
-                error_msg = convert_result.get('error', 'Convert 실패') if convert_result else 'Convert 실패'
-                convert_log.append(f"{coin} Convert 실패: {error_msg}")
-                print(f"Debug: {coin} Convert 실패: {error_msg}")
-        
-        print(f"Debug: 2단계 완료, 총 USDT: {total_usdt:.2f}, 필요 USDT: {needed_usdt:.2f}")
-        
-        # USDT가 충분해지면 USDT로 송금 (Convert API 미지원)
-        if total_usdt >= needed_usdt:
-            print(f"Debug: USDT 충분, USDT로 직접 송금 (Convert API 미지원)")
-            return send_coin_transaction(needed_usdt, address, 'bep20', 'USDT', skip_min_check=True, skip_address_check=True)
-        
-        # 디버깅 정보 수집
-        debug_info = []
-        debug_info.append(f"목표 코인: {target_coin.upper()}")
-        debug_info.append(f"필요한 양: {amount}")
-        debug_info.append(f"필요한 USDT: {needed_usdt:.2f}")
-        debug_info.append(f"현재 USDT: {current_usdt:.2f}")
-        debug_info.append(f"총 USDT (Convert 후): {total_usdt:.2f}")
-        
-        # Convert 로그 추가
-        if convert_log:
-            debug_info.append("\nConvert 과정:")
-            for log in convert_log:
-                debug_info.append(f"  {log}")
-        
-        # 현재 잔액 정보
-        debug_info.append("\n현재 잔액:")
-        for coin in convert_priority:
-            if coin == 'USDT':
-                continue
-            coin_balance = balances.get(coin, 0)
-            coin_price = prices.get(coin, 0)
-            if coin_balance > 0 and coin_price > 0:
-                coin_usdt_value = coin_balance * coin_price
-                debug_info.append(f"  {coin}: {coin_balance:.6f} (₩{coin_usdt_value:.2f})")
-        
-        debug_msg = "\n".join(debug_info)
-        return {'success': False, 'error': f'모든 코인을 Convert해도 목표 금액에 도달하지 못했습니다\n\n{debug_msg}'}
-        
-    except Exception as e:
-        return {'success': False, 'error': f'Convert/송금 오류: {str(e)}'}
-
-def simple_send_coin(target_coin, amount, address, network):
     """선택한 코인으로 직접 송금 (자동 스왑 없음)"""
     if not API_KEY or not SECRET_KEY:
         return {'success': False, 'error': 'API 키가 설정되지 않았습니다'}
@@ -745,11 +639,11 @@ def send_coin_transaction(amount, address, network, coin='USDT', skip_min_check=
                     
                     # 사용자 잔액에서 송금 수수료 차감
                     try:
-                        import bot
+                        from persistence import subtract_balance as global_subtract_balance
                         krw_rate = get_exchange_rate()
                         coin_price = get_coin_price(coin.upper())
                         fee_krw = transaction_fee * coin_price * krw_rate
-                        bot.subtract_balance(None, int(fee_krw))  # user_id는 None으로 전달 (전역 차감)
+                        global_subtract_balance(None, int(fee_krw))
                     except Exception as e:
                         print(f"송금 수수료 차감 실패: {e}")
                     

