@@ -1,0 +1,33 @@
+---
+description: Conventional commits, commit on every file change, push when work completes
+alwaysApply: true
+---
+
+# Git workflow (discord-coin-sender-bot)
+
+## Commit messages
+
+Use Conventional Commits prefixes:
+
+- `feat:` — new feature or user-visible behavior
+- `fix:` — bug fix
+- `refactor:` — structure change without behavior change
+- `style:` — formatting only (no logic change)
+- `chore:` — tooling, ignore files, deps, docs maintenance
+
+Write messages in English or Korean; keep the prefix and a short imperative summary.
+
+## When to commit
+
+- After any tracked file is modified for this task, create a commit before ending the turn (unless the user asked for no commit).
+- Do not commit `config.py`, secrets, `.env`, `DB/`, logs, or `captcha/`.
+- Never change global or local `git config` for user identity; use `git -c user.name=... -c user.email=...` only if commit would otherwise fail.
+
+## When to push
+
+- When a logical unit of work is done, push `origin` on the current branch (`git push origin HEAD`).
+- If push fails (auth, permission), report the error and leave commits local.
+
+## Scope
+
+Apply this workflow to all development in this repository.
