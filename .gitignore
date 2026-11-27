@@ -1,0 +1,15 @@
+# Local secrets and runtime
+config.py
+.env
+*.log
+bot.log
+
+# SQLite / JSON data
+DB/
+captcha/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
