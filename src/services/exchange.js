@@ -1,3 +1,5 @@
+const config = require("../config");
+
 const SUPPORTED = ["USDT", "BNB", "TRX", "LTC"];
 
 const MIN_COIN = {
@@ -27,12 +29,24 @@ async function fetchJson(url, options = {}) {
   return res.json();
 }
 
+async function getUsdtKrwFromUpbit() {
+  const url = config.kimchiUsdtKrwUrl;
+  if (!url) return 0;
+  const data = await fetchJson(url);
+  const row = Array.isArray(data) ? data[0] : data;
+  const p = row?.trade_price;
+  return p > 0 ? p : 0;
+}
+
 async function getExchangeRate() {
   try {
-    const data = await fetchJson(
-      "https://api.exchangerate-api.com/v4/latest/USD"
-    );
-    const rate = data?.rates?.KRW;
+    const usdtKrw = await getUsdtKrwFromUpbit();
+    if (usdtKrw > 0) return usdtKrw;
+    const data = await fetchJson(config.usdKrwExchangeUrl);
+    const rate =
+      data?.rates?.KRW ??
+      data?.data?.rates?.KRW ??
+      data?.result?.KRW;
     return rate > 0 ? rate : 1350;
   } catch {
     return 1350;
@@ -41,17 +55,19 @@ async function getExchangeRate() {
 
 async function getKimchiPremium() {
   try {
-    const upbit = await fetchJson(
-      "https://api.upbit.com/v1/ticker?markets=KRW-BTC"
-    );
-    const binance = await fetchJson(
-      "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-    );
+    const upbit = await fetchJson(config.kimchiUpbitTickerUrl);
+    const globalTicker = await fetchJson(config.kimchiGlobalPriceUrl);
     const upbitPrice = upbit[0]?.trade_price;
-    const binanceUsd = parseFloat(binance.price);
-    const krwRate = await getExchangeRate();
-    const binanceKrw = binanceUsd * krwRate;
-    return Number((((upbitPrice - binanceKrw) / binanceKrw) * 100).toFixed(2));
+    const binanceUsd =
+      parseFloat(globalTicker.price) ||
+      parseFloat(globalTicker?.data?.price) ||
+      0;
+    if (!upbitPrice || !binanceUsd) throw new Error("가격 없음");
+
+    const krwPerUsd = await getUsdtKrwFromUpbit();
+    const fx = krwPerUsd > 0 ? krwPerUsd : await getExchangeRate();
+    const globalKrw = binanceUsd * fx;
+    return Number((((upbitPrice - globalKrw) / globalKrw) * 100).toFixed(2));
   } catch {
     return 0;
   }
@@ -63,7 +79,7 @@ async function getUpbitCoinPriceUsd(coin) {
   if (coin === "USDT") return 1;
   try {
     const data = await fetchJson(
-      `https://api.upbit.com/v1/ticker?markets=${market}`
+      `${config.upbitTickerBaseUrl}${market}`
     );
     const krw = data[0]?.trade_price;
     const usdKrw = await getExchangeRate();
@@ -77,7 +93,7 @@ async function getMexcPriceUsd(coin) {
   if (coin === "USDT") return 1;
   try {
     const data = await fetchJson(
-      `https://api.mexc.com/api/v3/ticker/price?symbol=${coin}USDT`
+      `${config.mexcTickerPriceBaseUrl}${coin}USDT`
     );
     return parseFloat(data.price) || 0;
   } catch {

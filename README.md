@@ -10,6 +10,7 @@
 - 공통/비밀: 루트 `.env`
 - 테스트 서버 ID·채널: `test/.env`
 - `CHANNEL_PANEL`: 패널 채널 ID (`PANEL_MESSAGE_ID`는 패널 최초 게시 시 `.env`에 자동 저장)
+- 김프: `KIMCHI_*` / `USD_KRW_EXCHANGE_URL` — Upbit·Binance 공개 API (기본값 있음)
 
 ## 실행
 
