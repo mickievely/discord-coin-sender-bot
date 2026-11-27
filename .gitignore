@@ -1,5 +1,6 @@
 # Local secrets and runtime
 .env
+config.py
 *.log
 bot.log
 
