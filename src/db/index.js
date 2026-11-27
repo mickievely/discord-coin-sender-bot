@@ -24,7 +24,7 @@ function initSchema() {
   const db = openDb(DATA_DB);
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      user_id INTEGER PRIMARY KEY,
+      user_id TEXT PRIMARY KEY,
       phone TEXT,
       DOB TEXT,
       name TEXT,
@@ -36,7 +36,7 @@ function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS transaction_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
+      user_id TEXT,
       amount INTEGER,
       type TEXT,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -58,10 +58,15 @@ function getDb() {
   return sharedDb;
 }
 
+/** Discord snowflake — Number() 시 정밀도·범위 오류 방지 */
+function userIdKey(userId) {
+  return String(userId);
+}
+
 function getVerifiedUser(userId) {
   const row = getDb()
     .prepare("SELECT * FROM users WHERE user_id = ?")
-    .get(Number(userId));
+    .get(userIdKey(userId));
   return row || null;
 }
 
@@ -73,23 +78,23 @@ function addVerifiedUser(userId, phone = "", dob = "", name = "", telecom = "") 
                COALESCE((SELECT now_amount FROM users WHERE user_id = ?), 0))`
     )
     .run(
-      Number(userId),
+      userIdKey(userId),
       phone,
       dob,
       name,
       telecom,
-      Number(userId),
-      Number(userId)
+      userIdKey(userId),
+      userIdKey(userId)
     );
 }
 
 function removeVerifiedUser(userId) {
-  getDb().prepare("DELETE FROM users WHERE user_id = ?").run(Number(userId));
+  getDb().prepare("DELETE FROM users WHERE user_id = ?").run(userIdKey(userId));
 }
 
 function addBalance(userId, amount, type = "충전") {
   const db = getDb();
-  const uid = Number(userId);
+  const uid = userIdKey(userId);
   const current = db
     .prepare("SELECT Total_amount, now_amount FROM users WHERE user_id = ?")
     .get(uid);
@@ -111,7 +116,8 @@ function addBalance(userId, amount, type = "충전") {
 
 function subtractBalance(userId, amount) {
   const db = getDb();
-  const uid = userId === null || userId === undefined ? null : Number(userId);
+  const uid =
+    userId === null || userId === undefined ? null : userIdKey(userId);
 
   if (uid === null) {
     const result = db
@@ -145,7 +151,7 @@ function addTransactionHistory(
       `INSERT INTO transaction_history (user_id, amount, type, txid, coin_type, address, fee)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(Number(userId), amount, type, txid, coinType, address, fee);
+    .run(userIdKey(userId), amount, type, txid, coinType, address, fee);
 }
 
 function getTransactionHistory(userId, limit = 50) {
@@ -154,7 +160,7 @@ function getTransactionHistory(userId, limit = 50) {
       `SELECT * FROM transaction_history WHERE user_id = ?
        ORDER BY timestamp DESC LIMIT ?`
     )
-    .all(Number(userId), limit);
+    .all(userIdKey(userId), limit);
 }
 
 function checkAdmin(userId, defaultAdminId, allowedUserIds = []) {
