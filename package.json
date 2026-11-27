@@ -7,8 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "init-db": "node scripts/init-db.js",
-    "test:nice": "node scripts/test-nice-init.js",
-    "setup:channels": "node scripts/setup-channels.js"
+    "test:nice": "node scripts/test-nice-init.js"
   },
   "engines": {
     "node": ">=22.5.0"

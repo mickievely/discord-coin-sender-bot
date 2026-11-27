@@ -9,7 +9,6 @@
 
 - 공통/비밀: 루트 `.env`
 - 테스트 서버 ID·채널: `test/.env`
-- 채널 자동 생성: `npm run setup:channels`
 
 ## 실행
 
