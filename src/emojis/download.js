@@ -22,9 +22,14 @@ async function downloadBootstrapSvg(svgUrl) {
   }
 
   const ctype = (res.headers.get("content-type") || "").toLowerCase();
-  if (!ctype.includes("image/svg+xml")) {
+  if (
+    ctype &&
+    !ctype.includes("svg") &&
+    !ctype.includes("octet-stream") &&
+    !ctype.includes("text/plain")
+  ) {
     logEmoji("error", svgUrl, "not_svg", { contentType: ctype });
-    throw new Error(`not image/svg+xml: ${ctype}`);
+    throw new Error(`unexpected content-type: ${ctype}`);
   }
 
   const text = await res.text();

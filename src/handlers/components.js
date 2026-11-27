@@ -26,10 +26,10 @@ async function ephemeralV2(interaction, options) {
 }
 
 const COIN_OPTS = [
-  { label: "USDT", value: "usdt" },
-  { label: "TRX", value: "trx" },
-  { label: "LTC", value: "ltc" },
-  { label: "BNB", value: "bnb" },
+  { label: "USDT", value: "usdt", emojiKey: "coin_usdt" },
+  { label: "TRX", value: "trx", emojiKey: "coin_trx" },
+  { label: "LTC", value: "ltc", emojiKey: "coin_ltc" },
+  { label: "BNB", value: "bnb", emojiKey: "coin_bnb" },
 ];
 
 const NETWORK_OPTS = {

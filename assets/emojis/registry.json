@@ -1,6 +1,6 @@
 {
   "bootstrapIconsVersion": "1.11.3",
-  "updatedAt": "2026-11-27T04:39:47.661Z",
+  "updatedAt": "2026-11-27T04:51:41.459Z",
   "icons": [
     {
       "key": "svc_use",
@@ -150,6 +150,46 @@
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/send.svg",
       "svgFile": "assets/emojis/svg/send.svg",
       "pngFile": "assets\\emojis\\png\\coin_send_coin.png",
+      "discordId": null
+    },
+    {
+      "key": "coin_usdt",
+      "name": "coin_usdt",
+      "category": "coin",
+      "sha256": "d89dbd1daffb73f16519f33a7b39583720906168bec3724246e4bfd792529e8e",
+      "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg",
+      "svgFile": "assets/emojis/svg/crypto-usdt.svg",
+      "pngFile": "assets\\emojis\\png\\coin_usdt.png",
+      "discordId": null
+    },
+    {
+      "key": "coin_trx",
+      "name": "coin_trx",
+      "category": "coin",
+      "sha256": "ce967ee196d9b669e9a63e5ab451c9a3a485111de68a16ac99217e45e48b0053",
+      "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/trx.svg",
+      "svgFile": "assets/emojis/svg/crypto-trx.svg",
+      "pngFile": "assets\\emojis\\png\\coin_trx.png",
+      "discordId": null
+    },
+    {
+      "key": "coin_ltc",
+      "name": "coin_ltc",
+      "category": "coin",
+      "sha256": "00045b2bdc2b6961f6f6589dcb1ecfcf240f6dbf008bac4022d208a543b2f769",
+      "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/ltc.svg",
+      "svgFile": "assets/emojis/svg/crypto-ltc.svg",
+      "pngFile": "assets\\emojis\\png\\coin_ltc.png",
+      "discordId": null
+    },
+    {
+      "key": "coin_bnb",
+      "name": "coin_bnb",
+      "category": "coin",
+      "sha256": "1b720d292d89eeacaa8723e6d536d85f9054b1253aa616e4902ddcf0c70446a6",
+      "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/bnb.svg",
+      "svgFile": "assets/emojis/svg/crypto-bnb.svg",
+      "pngFile": "assets\\emojis\\png\\coin_bnb.png",
       "discordId": null
     }
   ]

@@ -15,6 +15,10 @@
     { "key": "telecom_lg", "name": "coin_telecom_lg", "category": "verify", "localSvg": "telecom-lg.svg", "preserveColors": true },
     { "key": "telecom_mvno", "name": "coin_telecom_mvno", "category": "verify", "localSvg": "telecom-mvno.svg", "preserveColors": true },
     { "key": "view_history", "name": "coin_view_history", "category": "user", "icon": "clock-history" },
-    { "key": "send_coin", "name": "coin_send_coin", "category": "transfer", "icon": "send" }
+    { "key": "send_coin", "name": "coin_send_coin", "category": "transfer", "icon": "send" },
+    { "key": "coin_usdt", "name": "coin_usdt", "category": "coin", "cryptoSymbol": "usdt", "preserveColors": true },
+    { "key": "coin_trx", "name": "coin_trx", "category": "coin", "cryptoSymbol": "trx", "preserveColors": true },
+    { "key": "coin_ltc", "name": "coin_ltc", "category": "coin", "cryptoSymbol": "ltc", "preserveColors": true },
+    { "key": "coin_bnb", "name": "coin_bnb", "category": "coin", "cryptoSymbol": "bnb", "preserveColors": true }
   ]
 }

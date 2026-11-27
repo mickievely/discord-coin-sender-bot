@@ -4,7 +4,10 @@
  */
 const fs = require("node:fs");
 const path = require("node:path");
-const { bootstrapIconSvgUrl } = require("../src/emojis/constants");
+const {
+  bootstrapIconSvgUrl,
+  cryptocurrencyIconSvgUrl,
+} = require("../src/emojis/constants");
 const { downloadBootstrapSvg } = require("../src/emojis/download");
 const { svgToEmojiPng } = require("../src/emojis/png");
 const { assertUnique } = require("../src/emojis/register");
@@ -33,6 +36,22 @@ async function main() {
         const localPath = path.join(ASSETS_DIR, "svg", def.localSvg);
         localSvg = fs.readFileSync(localPath, "utf8");
         svgUrl = `local:${def.localSvg}`;
+      } else if (def.cryptoSymbol) {
+        svgUrl =
+          def.cdnSvg || cryptocurrencyIconSvgUrl(def.cryptoSymbol);
+        const svgText = await downloadBootstrapSvg(svgUrl);
+        const svgName = `crypto-${String(def.cryptoSymbol).toLowerCase()}.svg`;
+        svgFile = `assets/emojis/svg/${svgName}`;
+        fs.writeFileSync(path.join(ASSETS_DIR, "svg", svgName), svgText, "utf8");
+        localSvg = svgText;
+      } else if (def.cdnSvg) {
+        svgUrl = def.cdnSvg;
+        const svgText = await downloadBootstrapSvg(svgUrl);
+        const slug = def.key.replace(/[^a-z0-9_-]/gi, "_");
+        const svgName = `cdn-${slug}.svg`;
+        svgFile = `assets/emojis/svg/${svgName}`;
+        fs.writeFileSync(path.join(ASSETS_DIR, "svg", svgName), svgText, "utf8");
+        localSvg = svgText;
       } else {
         svgUrl = bootstrapIconSvgUrl(def.icon);
         const svgText = await downloadBootstrapSvg(svgUrl);
