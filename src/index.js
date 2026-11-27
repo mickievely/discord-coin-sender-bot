@@ -1,9 +1,4 @@
-const {
-  Client,
-  Events,
-  GatewayIntentBits,
-  Partials,
-} = require("discord.js");
+const { Client, Events, GatewayIntentBits } = require("discord.js");
 const config = require("./config");
 const { registerCommands } = require("./commands/register");
 const { handleSlash } = require("./handlers/slash");
@@ -20,11 +15,7 @@ if (!config.token) {
 }
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.DirectMessages,
-  ],
-  partials: [Partials.Channel],
+  intents: [GatewayIntentBits.Guilds],
 });
 
 client.once(Events.ClientReady, async (c) => {

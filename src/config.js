@@ -9,10 +9,11 @@ function intList(raw) {
     .map((s) => BigInt(s));
 }
 
-function channelId(raw) {
-  if (!raw) return null;
-  const n = BigInt(String(raw).trim());
-  return n === 0n ? null : n;
+function channelIdStr(raw) {
+  if (!raw || !String(raw).trim()) return null;
+  const s = String(raw).trim();
+  if (s === "0") return null;
+  return s;
 }
 
 const SERVICE_DISPLAY_NAME =
@@ -37,11 +38,11 @@ module.exports = {
   depositAccountNo: process.env.DEPOSIT_ACCOUNT_NO || "",
   depositAccountHolder: process.env.DEPOSIT_ACCOUNT_HOLDER || "",
   channels: {
-    purchase: channelId(process.env.CHANNEL_PURCHASE_LOG),
-    transfer: channelId(process.env.CHANNEL_TRANSFER_LOG),
-    verify: channelId(process.env.CHANNEL_VERIFY_LOG),
-    charge: channelId(process.env.CHANNEL_CHARGE_LOG),
-    admin: channelId(process.env.CHANNEL_ADMIN_LOG),
+    purchase: channelIdStr(process.env.CHANNEL_PURCHASE_LOG),
+    transfer: channelIdStr(process.env.CHANNEL_TRANSFER_LOG),
+    verify: channelIdStr(process.env.CHANNEL_VERIFY_LOG),
+    charge: channelIdStr(process.env.CHANNEL_CHARGE_LOG),
+    admin: channelIdStr(process.env.CHANNEL_ADMIN_LOG),
   },
   coinAddresses: (() => {
     try {
