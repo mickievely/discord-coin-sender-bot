@@ -7,10 +7,14 @@ function isAllowed(userId) {
 }
 
 function isAdmin(userId) {
-  return db.checkAdmin(userId, config.defaultAdminId);
+  return db.checkAdmin(
+    userId,
+    config.defaultAdminId,
+    config.allowedUserIds
+  );
 }
 
-function requireStaff(interaction) {
+function requireAdmin(interaction) {
   if (!isAllowed(interaction.user.id)) {
     return "이 명령어는 허용된 사용자만 사용할 수 있습니다.";
   }
@@ -20,4 +24,4 @@ function requireStaff(interaction) {
   return null;
 }
 
-module.exports = { isAllowed, isAdmin, requireStaff };
+module.exports = { isAllowed, isAdmin, requireAdmin };

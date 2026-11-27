@@ -1,7 +1,7 @@
 const { MessageFlags } = require("discord.js");
 const config = require("../config");
 const db = require("../db");
-const { requireStaff } = require("../lib/auth");
+const { requireAdmin } = require("../lib/auth");
 const { setServiceFeeRate } = require("../services/fees");
 const { replyV2, buildV2Payload } = require("../ui/v2");
 const panel = require("../ui/panel");
@@ -10,7 +10,7 @@ async function handleSlash(interaction) {
   const name = interaction.commandName;
 
   if (name === "대행패널") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) {
       return replyV2(interaction, { lines: [`**접근 거부**\n${err}`] });
     }
@@ -21,7 +21,7 @@ async function handleSlash(interaction) {
       buildV2Payload({
         lines: [
           `**완료**`,
-          `${interaction.user.displayName} 직원이 대행 패널을 게시했습니다.`,
+          `${interaction.user.displayName}님이 대행 패널을 게시했습니다.`,
         ],
       })
     );
@@ -29,14 +29,14 @@ async function handleSlash(interaction) {
   }
 
   if (name === "재고새로고침") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     await panel.refreshPanel(true);
     return replyV2(interaction, { lines: ["패널을 새로고침했습니다."] });
   }
 
   if (name === "수수료변경") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const pct = interaction.options.getNumber("퍼센트");
     if (!setServiceFeeRate(pct / 100)) {
@@ -49,24 +49,8 @@ async function handleSlash(interaction) {
     });
   }
 
-  if (name === "직원") {
-    const err = requireStaff(interaction);
-    if (err) return replyV2(interaction, { lines: [err] });
-    const opt = interaction.options.getString("옵션");
-    const user = interaction.options.getUser("유저");
-    if (opt === "add") db.addAdmin(user.id, user.tag);
-    else db.removeAdmin(user.id);
-    return replyV2(interaction, {
-      lines: [
-        opt === "add"
-          ? `직원 추가: ${user.tag}`
-          : `직원 해제: ${user.tag}`,
-      ],
-    });
-  }
-
   if (name === "강제인증") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     db.addVerifiedUser(user.id);
@@ -76,7 +60,7 @@ async function handleSlash(interaction) {
   }
 
   if (name === "고객블랙") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     const existed = db.getVerifiedUser(user.id);
@@ -91,7 +75,7 @@ async function handleSlash(interaction) {
   }
 
   if (name === "고객충전" || name === "충전승인") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     const amount = interaction.options.getInteger("금액");
@@ -105,7 +89,7 @@ async function handleSlash(interaction) {
   }
 
   if (name === "충전거절") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     const amount = interaction.options.getInteger("금액");
@@ -127,7 +111,7 @@ async function handleSlash(interaction) {
   }
 
   if (name === "정보조회") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     const row = db.getVerifiedUser(user.id);
@@ -145,7 +129,7 @@ async function handleSlash(interaction) {
   }
 
   if (name === "인증해체") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     db.removeVerifiedUser(user.id);
@@ -153,7 +137,7 @@ async function handleSlash(interaction) {
   }
 
   if (name === "txid조회") {
-    const err = requireStaff(interaction);
+    const err = requireAdmin(interaction);
     if (err) return replyV2(interaction, { lines: [err] });
     const user = interaction.options.getUser("유저");
     const txs = db.getTransactionHistory(user.id, 30);

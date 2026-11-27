@@ -4,7 +4,6 @@ const { DatabaseSync } = require("node:sqlite");
 
 const DB_DIR = path.join(process.cwd(), "DB");
 const VERIFY_DB = path.join(DB_DIR, "verify_user.db");
-const ADMIN_DB = path.join(DB_DIR, "admin.db");
 const HISTORY_DB = path.join(DB_DIR, "history.db");
 
 function ensureDir() {
@@ -32,15 +31,6 @@ function initSchema() {
   `);
   verify.close();
 
-  const admin = openDb(ADMIN_DB);
-  admin.exec(`
-    CREATE TABLE IF NOT EXISTS admins (
-      user_id INTEGER PRIMARY KEY,
-      username TEXT
-    );
-  `);
-  admin.close();
-
   const history = openDb(HISTORY_DB);
   history.exec(`
     CREATE TABLE IF NOT EXISTS transaction_history (
@@ -66,10 +56,6 @@ function getVerifyDb() {
 
 function getHistoryDb() {
   return openDb(HISTORY_DB);
-}
-
-function getAdminDb() {
-  return openDb(ADMIN_DB);
 }
 
 function getVerifiedUser(userId) {
@@ -182,28 +168,10 @@ function getTransactionHistory(userId, limit = 50) {
   return rows;
 }
 
-function checkAdmin(userId, defaultAdminId) {
-  if (BigInt(userId) === BigInt(defaultAdminId)) return true;
-  const db = getAdminDb();
-  const row = db
-    .prepare("SELECT 1 AS ok FROM admins WHERE user_id = ?")
-    .get(Number(userId));
-  db.close();
-  return Boolean(row);
-}
-
-function addAdmin(userId, username) {
-  const db = getAdminDb();
-  db.prepare(
-    "INSERT OR IGNORE INTO admins (user_id, username) VALUES (?, ?)"
-  ).run(Number(userId), username);
-  db.close();
-}
-
-function removeAdmin(userId) {
-  const db = getAdminDb();
-  db.prepare("DELETE FROM admins WHERE user_id = ?").run(Number(userId));
-  db.close();
+function checkAdmin(userId, defaultAdminId, allowedUserIds = []) {
+  const id = BigInt(userId);
+  if (defaultAdminId && id === BigInt(defaultAdminId)) return true;
+  return allowedUserIds.some((allowedId) => allowedId === id);
 }
 
 module.exports = {
@@ -216,6 +184,4 @@ module.exports = {
   addTransactionHistory,
   getTransactionHistory,
   checkAdmin,
-  addAdmin,
-  removeAdmin,
 };

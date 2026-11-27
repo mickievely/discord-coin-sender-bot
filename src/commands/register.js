@@ -16,22 +16,6 @@ function buildCommands() {
         o.setName("퍼센트").setDescription("수수료 %").setRequired(true)
       ),
     new SlashCommandBuilder()
-      .setName("직원")
-      .setDescription("직원 추가/해제")
-      .addStringOption((o) =>
-        o
-          .setName("옵션")
-          .setDescription("추가 또는 해제")
-          .setRequired(true)
-          .addChoices(
-            { name: "추가", value: "add" },
-            { name: "해제", value: "remove" }
-          )
-      )
-      .addUserOption((o) =>
-        o.setName("유저").setDescription("대상").setRequired(true)
-      ),
-    new SlashCommandBuilder()
       .setName("강제인증")
       .setDescription("고객 강제 인증")
       .addUserOption((o) =>
