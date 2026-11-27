@@ -6,13 +6,12 @@ const { buildV2Payload } = require("./v2");
 const { persistPanelMessageId } = require("../lib/envFile");
 
 let panelMessage = null;
-let refreshCounter = 0;
 let currentRate = 1350;
 
-function bumpCounter() {
-  refreshCounter += 1;
-  if (refreshCounter > 60) refreshCounter = 1;
-  return refreshCounter;
+/** Discord 타임스탬프 (절대 시각, KST 기준 unix) */
+function refreshTimestamp() {
+  const unix = Math.floor(Date.now() / 1000);
+  return `<t:${unix}:f>`;
 }
 
 async function stockLines() {
@@ -46,7 +45,7 @@ async function buildPanelPayload(refreshLabel) {
       `### 실시간 재고 (₩) · ${stock}`,
       `김치프리미엄 \`${kimchi >= 0 ? "+" : ""}${kimchi.toFixed(2)}%\``,
       `수수료(서비스) \`${fee}%\``,
-      `갱신 \`${refreshLabel}\``,
+      `갱신 ${refreshLabel}`,
     ],
     buttons: [
       { id: "svc_use", label: "대행이용", emojiKey: "svc_use" },
@@ -65,7 +64,7 @@ async function buildPanelPayload(refreshLabel) {
 
 async function sendPanel(channel) {
   currentRate = await exchange.getExchangeRate();
-  const payload = await buildPanelPayload(`${bumpCounter()}초전`);
+  const payload = await buildPanelPayload(refreshTimestamp());
   const msg = await channel.send(payload);
   panelMessage = msg;
   return msg;
@@ -74,7 +73,7 @@ async function sendPanel(channel) {
 async function refreshPanel() {
   if (!panelMessage) return;
   currentRate = await exchange.getExchangeRate();
-  const label = `${bumpCounter()}초전`;
+  const label = refreshTimestamp();
   const payload = await buildPanelPayload(label);
   await panelMessage.edit(payload);
 }
