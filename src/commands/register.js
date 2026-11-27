@@ -51,10 +51,20 @@ async function registerCommands(client) {
     process.env.CLIENT_ID || client.application?.id || client.user.id
   );
   const guildId = config.guildId ? String(config.guildId) : null;
+
+  /** 예전 글로벌 커맨드(대행패널·재고새로고침 등) 일괄 제거 */
+  await rest.put(Routes.applicationCommands(appId), { body: [] });
+
   if (guildId) {
     await rest.put(Routes.applicationGuildCommands(appId, guildId), { body });
+    console.log(
+      `슬래시 커맨드 (길드): ${body.map((c) => c.name).join(", ") || "없음"}`
+    );
   } else {
     await rest.put(Routes.applicationCommands(appId), { body });
+    console.log(
+      `슬래시 커맨드 (글로벌): ${body.map((c) => c.name).join(", ") || "없음"}`
+    );
   }
 }
 
