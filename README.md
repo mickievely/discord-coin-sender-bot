@@ -10,7 +10,8 @@
 - 공통/비밀: 루트 `.env`
 - 테스트 서버 ID·채널: `test/.env`
 - `CHANNEL_PANEL`: 패널 채널 ID (`PANEL_MESSAGE_ID`는 패널 최초 게시 시 `.env`에 자동 저장)
-- 환율: `USD_KRW_RATE_URL` 1개 · 김프: `KIMCHI_PREMIUM_URL` 1개 (수수료는 `SERVICE_FEE_RATE`만)
+- 환율(재고): `USD_KRW_RATE_URL`(업비트 USDT) · 김프: `KIMCHI_SYMBOL`(기본 USDT), `KIMCHI_FX_URL`(USD/KRW, 기본 Yahoo), BTC일 때만 `KIMCHI_PREMIUM_URL`
+- 패널·아이콘: `PANEL_IMAGE_URL` / `EMBED_ICON_URL` 비우면 기동 시 `assets/generated/`에 PNG 생성 후 **.env에 경로 자동 저장** (원격 URL도 가능)
 
 ## 실행
 

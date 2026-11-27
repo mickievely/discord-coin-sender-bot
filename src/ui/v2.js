@@ -13,13 +13,51 @@ const {
 } = require("discord.js");
 const config = require("../config");
 const { resolveButtonEmoji } = require("../emojis/render");
+const {
+  getPanelBannerAttachmentSync,
+  getEmbedIconAttachmentSync,
+  readLocalImageAttachment,
+} = require("./panelBanner");
 
-function assertImageUrl(url) {
-  const u = url || config.panelImageUrl || config.embedIconUrl;
-  if (!u) {
-    throw new Error("PANEL_IMAGE_URL 또는 EMBED_ICON_URL이 필요합니다.");
+function resolveUrlOrLocalFile(envValue) {
+  const v = (envValue || "").trim();
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) {
+    return { imageUrl: v, files: undefined };
   }
-  return u;
+  const local = readLocalImageAttachment(v);
+  if (local) {
+    return { imageUrl: local.url, files: [local.attachment] };
+  }
+  return null;
+}
+
+function resolvePanelImage(url) {
+  if (url) return { imageUrl: url, files: undefined };
+
+  const banner = getPanelBannerAttachmentSync();
+  if (banner) {
+    return { imageUrl: banner.url, files: [banner.attachment] };
+  }
+
+  const fromPanel =
+    resolveUrlOrLocalFile(process.env.PANEL_IMAGE_URL) ||
+    resolveUrlOrLocalFile(config.panelImageUrl);
+  if (fromPanel) return fromPanel;
+
+  const fromIcon =
+    resolveUrlOrLocalFile(process.env.EMBED_ICON_URL) ||
+    resolveUrlOrLocalFile(config.embedIconUrl);
+  if (fromIcon) return fromIcon;
+
+  const icon = getEmbedIconAttachmentSync();
+  if (icon) {
+    return { imageUrl: icon.url, files: [icon.attachment] };
+  }
+
+  throw new Error(
+    "패널 이미지 없음 — 봇 기동 시 브랜드 이미지 생성이 실패했거나 PANEL_IMAGE_URL / EMBED_ICON_URL을 확인하세요."
+  );
 }
 
 /**
@@ -28,6 +66,8 @@ function assertImageUrl(url) {
 function buildV2Payload({
   lines = [],
   imageUrl,
+  /** 패널만 true — 버튼/슬래시 ephemeral 응답에는 이미지 없음 */
+  showImage = false,
   accentColor = 0xffff00,
   buttons = [],
   selects = [],
@@ -41,10 +81,14 @@ function buildV2Payload({
     );
   }
 
-  const gallery = new MediaGalleryBuilder().addItems(
-    new MediaGalleryItemBuilder().setURL(assertImageUrl(imageUrl))
-  );
-  container.addMediaGalleryComponents(gallery);
+  let resolved = null;
+  if (showImage) {
+    resolved = resolvePanelImage(imageUrl);
+    const gallery = new MediaGalleryBuilder().addItems(
+      new MediaGalleryItemBuilder().setURL(resolved.imageUrl)
+    );
+    container.addMediaGalleryComponents(gallery);
+  }
 
   if (buttons.length) {
     const row = new ActionRowBuilder();
@@ -84,10 +128,12 @@ function buildV2Payload({
     new TextDisplayBuilder().setContent(config.footerText)
   );
 
-  return {
+  const payload = {
     components: [container],
     flags: MessageFlags.IsComponentsV2,
   };
+  if (resolved?.files?.length) payload.files = resolved.files;
+  return payload;
 }
 
 async function replyV2(interaction, options) {

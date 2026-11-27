@@ -45,10 +45,7 @@ function requireVerified(interaction) {
 
 async function showVerifyRequired(interaction) {
   return ephemeralV2(interaction, {
-    lines: [
-      "**본인인증이 필요합니다**",
-      "아래에서 본인인증을 진행해 주세요.",
-    ],
+    lines: ["**본인인증이 필요합니다**"],
     buttons: [
       {
         id: "start_verify",

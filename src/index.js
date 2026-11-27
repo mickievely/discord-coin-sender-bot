@@ -8,7 +8,15 @@ const {
   handleModal,
 } = require("./handlers/components");
 const panel = require("./ui/panel");
+const { warmPanelBanner } = require("./ui/panelBanner");
 const { reloadRegistry } = require("./emojis/registry");
+const {
+  writeLocalPid,
+  registerLocalPidCleanup,
+} = require("./lib/localPid");
+
+writeLocalPid();
+registerLocalPidCleanup();
 
 if (!config.token) {
   console.error("DISCORD_TOKEN이 .env에 없습니다.");
@@ -29,12 +37,22 @@ client.once(Events.ClientReady, async (c) => {
   } catch (e) {
     console.error("커맨드 등록 실패:", e.message);
   }
+  if (config.useAutoPanelBanner || config.useAutoEmbedIcon) {
+    try {
+      await warmPanelBanner(config.serviceDisplayName);
+      console.log(
+        `브랜드 이미지 생성 (${config.serviceDisplayName}) → assets/generated/`
+      );
+    } catch (e) {
+      console.error("브랜드 이미지 생성 실패:", e.message);
+    }
+  }
   try {
     await panel.initPanel(c);
   } catch (e) {
     console.error("패널 초기화 실패:", e.message);
   }
-  panel.startPanelRefresh();
+  panel.startPanelRefresh(c);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

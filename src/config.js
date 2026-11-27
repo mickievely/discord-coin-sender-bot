@@ -42,10 +42,11 @@ module.exports = {
     : 0n,
   allowedUserIds: intList(process.env.ALLOWED_USER_IDS),
   serviceDisplayName: SERVICE_DISPLAY_NAME,
-  panelImageUrl:
-    process.env.PANEL_IMAGE_URL ||
-    "https://cdn.discordapp.com/embed/avatars/0.png",
-  embedIconUrl: process.env.EMBED_ICON_URL || process.env.PANEL_IMAGE_URL || "",
+  /** 비우면 기동 시 assets/generated/ 에 PNG 생성 + .env 경로 자동 저장 */
+  panelImageUrl: (process.env.PANEL_IMAGE_URL || "").trim(),
+  embedIconUrl: (process.env.EMBED_ICON_URL || "").trim(),
+  useAutoPanelBanner: !(process.env.PANEL_IMAGE_URL || "").trim(),
+  useAutoEmbedIcon: !(process.env.EMBED_ICON_URL || "").trim(),
   serviceFeePercent: serviceFee.percent,
   serviceFeeRate: serviceFee.rate,
   mexcApiKey: process.env.MEXC_API_KEY || "",
@@ -65,6 +66,12 @@ module.exports = {
   usdKrwRateUrl:
     process.env.USD_KRW_RATE_URL ||
     "https://api.upbit.com/v1/ticker?markets=KRW-USDT",
+  /** 김프 계산 코인: USDT(테더 김프) 또는 BTC */
+  kimchiSymbol: (process.env.KIMCHI_SYMBOL || "USDT").toUpperCase(),
+  /** 김프 분모용 USD/KRW (kimpga·TwelveData 계열). 미설정 시 Yahoo USDKRW=X */
+  kimchiForexUrl:
+    process.env.KIMCHI_FX_URL ||
+    "https://query1.finance.yahoo.com/v8/finance/chart/USDKRW=X",
   kimchiPremiumUrl:
     process.env.KIMCHI_PREMIUM_URL ||
     "https://api.upbit.com/v1/ticker?markets=KRW-BTC",

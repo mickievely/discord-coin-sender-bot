@@ -1,8 +1,13 @@
 # Local secrets and runtime
 .env
 test/.env
+secrets/*
+!secrets/.gitkeep
+.cwallet-browser-profile/
 assets/emojis/registry.local.json
+assets/generated/
 *.log
+.local-bot.pid
 
 # SQLite data (project root only)
 /DB/

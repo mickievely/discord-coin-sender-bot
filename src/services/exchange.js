@@ -33,52 +33,116 @@ async function fetchJson(url, options = {}) {
   return res.json();
 }
 
-function parseDirectKimchi(raw) {
-  if (raw == null) return null;
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string" && raw.trim() && Number.isFinite(Number(raw))) {
-    return Number(raw);
-  }
-  const n =
-    raw.premium_percent ??
-    raw.kimchi_premium ??
-    raw.premium ??
-    raw.kimchi ??
-    raw.data?.premium_percent;
-  if (n != null && Number.isFinite(Number(n))) return Number(n);
+let cachedUsdKrw = 0;
+let cachedUsdKrwAt = 0;
+const RATE_CACHE_MS = 30_000;
+const RATE_FALLBACK = 1350;
+
+let cachedKimchiFx = 0;
+let cachedKimchiFxAt = 0;
+
+function parseKimchiForexFromJson(data) {
+  if (data == null) return null;
+  if (typeof data === "number" && data > 0) return data;
+  const yahoo = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+  if (Number.isFinite(yahoo) && yahoo > 0) return yahoo;
+  const row = Array.isArray(data) ? data[0] : data;
+  const fromRow = Number(
+    row?.trade_price ?? row?.rate ?? row?.price ?? row?.KRW ?? row?.krw
+  );
+  if (Number.isFinite(fromRow) && fromRow > 0) return fromRow;
+  const nested =
+    data?.rates?.KRW ??
+    data?.rates?.krw ??
+    data?.usd?.krw ??
+    data?.data?.rate;
+  const n = Number(nested);
+  if (Number.isFinite(n) && n > 0) return n;
   return null;
 }
 
-/** 환율: USD_KRW_RATE_URL 1회만 */
-async function getExchangeRate() {
+/** kimpga 방식 분모: USD/KRW (실시간 환율, 업비트 USDT 아님) */
+async function getKimchiForexRate() {
+  const now = Date.now();
+  if (cachedKimchiFx > 0 && now - cachedKimchiFxAt < RATE_CACHE_MS) {
+    return cachedKimchiFx;
+  }
+  try {
+    const data = await fetchJson(config.kimchiForexUrl, {
+      headers: { "User-Agent": "discord-coin-sender-bot/1.0" },
+    });
+    const rate = parseKimchiForexFromJson(data);
+    if (!rate) throw new Error("김프 환율(USD/KRW) 없음");
+    cachedKimchiFx = rate;
+    cachedKimchiFxAt = now;
+    return rate;
+  } catch (err) {
+    if (cachedKimchiFx > 0) return cachedKimchiFx;
+    console.error("김프 환율 조회 실패, 폴백 사용:", err.message);
+    return RATE_FALLBACK;
+  }
+}
+
+function calcKimchiPercent(domesticKrw, globalKrw) {
+  if (!domesticKrw || !globalKrw) throw new Error("김프 가격 없음");
+  return Number((((domesticKrw - globalKrw) / globalKrw) * 100).toFixed(2));
+}
+
+/** 환율: Upbit KRW-USDT trade_price = ₩/1 USDT (USD·KRW 대용) */
+async function fetchUsdKrwFromUrl() {
   const data = await fetchJson(config.usdKrwRateUrl);
   const row = Array.isArray(data) ? data[0] : data;
-  const rate = row?.trade_price ?? row?.rate ?? row?.KRW;
-  if (!rate || rate <= 0) throw new Error("환율 없음");
+  const rate = Number(
+    row?.trade_price ?? row?.opening_price ?? row?.rate ?? row?.KRW
+  );
+  if (!Number.isFinite(rate) || rate <= 0) throw new Error("환율 없음");
   return rate;
 }
 
+async function getExchangeRate() {
+  const now = Date.now();
+  if (cachedUsdKrw > 0 && now - cachedUsdKrwAt < RATE_CACHE_MS) {
+    return cachedUsdKrw;
+  }
+  try {
+    const rate = await fetchUsdKrwFromUrl();
+    cachedUsdKrw = rate;
+    cachedUsdKrwAt = now;
+    return rate;
+  } catch (err) {
+    if (cachedUsdKrw > 0) return cachedUsdKrw;
+    console.error("환율 조회 실패, 폴백 사용:", err.message);
+    return RATE_FALLBACK;
+  }
+}
+
 /**
- * 김치프리미엄: KIMCHI_PREMIUM_URL 1회
- * - JSON에 premium_percent 등 있으면 그대로 사용
- * - Upbit KRW-BTC 티커면 글로벌은 Binance BTCUSDT 1회로 계산 (env는 1개만)
+ * 김치프리미엄 (kimpga·김프가 방식)
+ * ({업비트 원화가 − 글로벌 원화가} ÷ 글로벌 원화가) × 100
+ * - USDT: 업비트 KRW-USDT vs 1달러 × USD/KRW 환율
+ * - BTC: 업비트 KRW-BTC vs 바이낸스 BTCUSDT × USD/KRW
  */
 async function getKimchiPremium() {
-  const data = await fetchJson(config.kimchiPremiumUrl);
-  const direct = parseDirectKimchi(data);
-  if (direct != null) return Number(direct.toFixed(2));
+  const fx = await getKimchiForexRate();
+  const symbol = config.kimchiSymbol;
 
+  if (symbol === "USDT") {
+    const domesticKrw = await getExchangeRate();
+    const globalKrw = fx;
+    return calcKimchiPercent(domesticKrw, globalKrw);
+  }
+
+  const data = await fetchJson(config.kimchiPremiumUrl);
   const upbitRow = Array.isArray(data) ? data[0] : data;
-  const upbitBtc = upbitRow?.trade_price;
-  if (!upbitBtc) throw new Error("김프(업비트) 가격 없음");
+  const domesticKrw = upbitRow?.trade_price;
+  if (!domesticKrw) throw new Error("김프(업비트) 가격 없음");
 
   const global = await fetchJson(BINANCE_BTC_USDT_URL);
   const binanceUsd = parseFloat(global.price);
   if (!binanceUsd) throw new Error("김프(글로벌) 가격 없음");
 
-  const fx = await getExchangeRate();
   const globalKrw = binanceUsd * fx;
-  return Number((((upbitBtc - globalKrw) / globalKrw) * 100).toFixed(2));
+  return calcKimchiPercent(domesticKrw, globalKrw);
 }
 
 async function getUpbitCoinPriceUsd(coin) {
@@ -159,6 +223,7 @@ module.exports = {
   MIN_COIN,
   getExchangeRate,
   getKimchiPremium,
+  getKimchiForexRate,
   getCoinPrice,
   getAllCoinPrices,
   getMinimumAmountsKrw,

@@ -9,7 +9,9 @@
     "init-db": "node scripts/init-db.js",
     "test:nice": "node scripts/test-nice-init.js",
     "emojis:sync": "node scripts/emojis-sync-assets.js",
-    "emojis:register": "node scripts/emojis-register.js"
+    "emojis:register": "node scripts/emojis-register.js",
+    "cwallet:save-session": "node scripts/cwallet-save-storage-state.js",
+    "cwallet:test-session": "node scripts/cwallet-session-test.js"
   },
   "engines": {
     "node": ">=22.5.0"
@@ -22,5 +24,8 @@
     "qs": "^6.13.1",
     "sharp": "^0.33.5",
     "tough-cookie": "^5.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.1"
   }
 }
