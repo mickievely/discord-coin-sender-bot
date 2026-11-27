@@ -1,4 +1,9 @@
-require("dotenv").config();
+const path = require("path");
+const dotenv = require("dotenv");
+
+// ENV_FILE 지정 시 그 파일을 먼저 읽고, 빠진 값은 루트 .env에서 채움 (dotenv는 기존 값을 덮어쓰지 않음)
+if (process.env.ENV_FILE) dotenv.config({ path: process.env.ENV_FILE });
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 function intList(raw) {
   if (!raw || !String(raw).trim()) return [];
@@ -20,6 +25,8 @@ const SERVICE_DISPLAY_NAME =
 
 module.exports = {
   token: process.env.DISCORD_TOKEN || "",
+  clientId: process.env.CLIENT_ID || "",
+  clientSecret: process.env.CLIENT_SECRET || "",
   guildId: process.env.GUILD_ID || null,
   defaultAdminId: process.env.DEFAULT_ADMIN_ID
     ? BigInt(process.env.DEFAULT_ADMIN_ID)

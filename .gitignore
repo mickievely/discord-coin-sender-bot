@@ -17,3 +17,5 @@ venv/
 # Node
 node_modules/
 package-lock.json
+# Local test sandbox (secrets)
+/test/
