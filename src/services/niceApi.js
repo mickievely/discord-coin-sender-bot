@@ -130,9 +130,11 @@ class NiceApi {
 
   async RequestCode(name, birth, gender, phone_number, captcha) {
     updateSessionHeaders(this.session, {
+      Accept: "application/json, text/plain, */*",
       Connection: "keep-alive",
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       Origin: "https://nice.checkplus.co.kr",
+      Referer: `${NICE_API}/cert/mobileCert/sms/certification`,
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "x-service-info": this.service_info,
@@ -162,9 +164,11 @@ class NiceApi {
 
   async VerifyCode(verify_code) {
     updateSessionHeaders(this.session, {
+      Accept: "application/json, text/plain, */*",
       Connection: "keep-alive",
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       Origin: "https://nice.checkplus.co.kr",
+      Referer: `${NICE_API}/cert/mobileCert/sms/confirm`,
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "x-service-info": this.service_info,
