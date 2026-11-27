@@ -1,6 +1,6 @@
 # discord-coin-sender-bot 작업 지침
 
-Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(`node:sqlite`), MEXC API, NICE PASS 본인인증.
+Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(`node:sqlite`), Cwallet 웹 세션 송금·스왑, NICE PASS 본인인증.
 사용자와는 **한국어**로 대화한다.
 
 ## 구조
@@ -9,7 +9,7 @@ Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(
 - `src/config.js` — 모든 환경 변수는 여기서만 읽는다 (`process.env`를 다른 곳에서 직접 쓰지 말 것)
 - `src/commands/register.js` — 슬래시 커맨드 정의·등록 (`GUILD_ID` 있으면 길드, 없으면 전역)
 - `src/handlers/` — `slash.js`(슬래시), `components.js`(버튼·셀렉트·모달), `verify.js`(PASS 인증)
-- `src/services/` — 외부 API: `mexc.js`, `exchange.js`(환율·김프는 env URL 각 1개), `fees.js`, `niceApi.js`/`niceParse.js`
+- `src/services/` — 외부 API: `cwallet.js`, `cwalletSecurity.js`, `exchange.js`(환율·김프는 env URL 각 1개), `fees.js`, `niceApi.js`/`niceParse.js`
 - `src/ui/` — `panel.js`(`CHANNEL_PANEL` 채널 자동 게시·60초 갱신), `v2.js`(Components V2 빌더)
 - `src/emojis/` — Bootstrap Icons(cdnjs) → PNG → **애플리케이션 이모지**만. 버튼은 `emojiKey`, 유니코드 이모지 금지. 에셋은 `assets/emojis/`
 - `src/db/index.js` — SQLite 단일 `DB/data.db` (users, transaction_history)

@@ -161,11 +161,11 @@ async function getUpbitCoinPriceUsd(coin) {
   }
 }
 
-async function getMexcPriceUsd(coin) {
+async function getBinancePriceUsd(coin) {
   if (coin === "USDT") return 1;
   try {
     const data = await fetchJson(
-      `${config.mexcTickerPriceBaseUrl}${coin}USDT`
+      `https://api.binance.com/api/v3/ticker/price?symbol=${coin}USDT`
     );
     return parseFloat(data.price) || 0;
   } catch {
@@ -177,7 +177,7 @@ async function getCoinPrice(coin) {
   const upper = coin.toUpperCase();
   const up = await getUpbitCoinPriceUsd(upper);
   if (up > 0) return up;
-  return getMexcPriceUsd(upper);
+  return getBinancePriceUsd(upper);
 }
 
 async function getAllCoinPrices() {
@@ -208,9 +208,17 @@ async function getMinimumAmountsKrw() {
   return out;
 }
 
+function normalizeNetworkKey(network) {
+  const n = String(network).toLowerCase();
+  if (n === "bep20") return "BSC";
+  if (n === "trc20") return "TRX";
+  if (n === "ltc") return "LTC";
+  return String(network).toUpperCase();
+}
+
 function getTransactionFee(coin, network) {
   const map = CHAIN_FEE[coin.toUpperCase()] || {};
-  return map[network.toUpperCase()] ?? 1;
+  return map[normalizeNetworkKey(network)] ?? 1;
 }
 
 function krwToCoinAmount(krwAmount, coinPrice, actualKrwRate) {
@@ -228,5 +236,6 @@ module.exports = {
   getAllCoinPrices,
   getMinimumAmountsKrw,
   getTransactionFee,
+  normalizeNetworkKey,
   krwToCoinAmount,
 };

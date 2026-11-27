@@ -49,8 +49,13 @@ module.exports = {
   useAutoEmbedIcon: !(process.env.EMBED_ICON_URL || "").trim(),
   serviceFeePercent: serviceFee.percent,
   serviceFeeRate: serviceFee.rate,
-  mexcApiKey: process.env.MEXC_API_KEY || "",
-  mexcSecretKey: process.env.MEXC_SECRET_KEY || "",
+  /** Cwallet 출금·스왑 transaction-security 패스워드 (평문) */
+  cwalletPassword:
+    process.env.CWALLET_PASSWORD ||
+    process.env.CWALLET_PAY_PASS ||
+    "010010",
+  /** Google OTP 사용 시 */
+  cwalletTotp: process.env.CWALLET_TOTP || "",
   depositBankName: process.env.DEPOSIT_BANK_NAME || "",
   depositAccountNo: process.env.DEPOSIT_ACCOUNT_NO || "",
   depositAccountHolder: process.env.DEPOSIT_ACCOUNT_HOLDER || "",
@@ -78,9 +83,6 @@ module.exports = {
   upbitTickerBaseUrl:
     process.env.UPBIT_TICKER_BASE_URL ||
     "https://api.upbit.com/v1/ticker?markets=",
-  mexcTickerPriceBaseUrl:
-    process.env.MEXC_TICKER_PRICE_BASE_URL ||
-    "https://api.mexc.com/api/v3/ticker/price?symbol=",
   coinAddresses: (() => {
     try {
       return JSON.parse(process.env.COIN_ADDRESSES || "{}");

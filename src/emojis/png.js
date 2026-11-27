@@ -13,8 +13,8 @@ function paintSvgWhite(svgText) {
   return s;
 }
 
-async function svgToEmojiPng(svgText, keyForLog = "unknown") {
-  const painted = paintSvgWhite(svgText);
+async function svgToEmojiPng(svgText, keyForLog = "unknown", opts = {}) {
+  const painted = opts.preserveColors ? svgText : paintSvgWhite(svgText);
   let png;
   try {
     png = await sharp(Buffer.from(painted, "utf8"), { density: 192 })

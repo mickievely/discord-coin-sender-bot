@@ -19,6 +19,28 @@ const {
   readLocalImageAttachment,
 } = require("./panelBanner");
 
+/** 버튼/셀렉트가 달린 메시지가 ephemeral인지 */
+function isEphemeralComponentMessage(interaction) {
+  if (!interaction.isMessageComponent?.()) return false;
+  const msg = interaction.message;
+  if (!msg?.flags) return false;
+  return msg.flags.has(MessageFlags.Ephemeral);
+}
+
+/** Discord 3초 제한: editReply 전에 즉시 defer */
+async function ackInteractionForEdit(interaction) {
+  if (interaction.deferred || interaction.replied) return;
+  if (isEphemeralComponentMessage(interaction)) {
+    await interaction.deferUpdate();
+    return;
+  }
+  if (interaction.isMessageComponent?.()) {
+    await interaction.deferReply({ ephemeral: true });
+    return;
+  }
+  await interaction.deferReply({ ephemeral: true });
+}
+
 function resolveUrlOrLocalFile(envValue) {
   const v = (envValue || "").trim();
   if (!v) return null;
@@ -68,6 +90,10 @@ function buildV2Payload({
   imageUrl,
   /** 패널만 true — 버튼/슬래시 ephemeral 응답에는 이미지 없음 */
   showImage = false,
+  /** editReply files[].name 과 짝 (예: captcha.png) */
+  attachmentGallery,
+  /** 패널·일반 UI는 true, 본인인증 등에서는 false */
+  showFooter = true,
   accentColor = 0xffff00,
   buttons = [],
   selects = [],
@@ -86,6 +112,12 @@ function buildV2Payload({
     resolved = resolvePanelImage(imageUrl);
     const gallery = new MediaGalleryBuilder().addItems(
       new MediaGalleryItemBuilder().setURL(resolved.imageUrl)
+    );
+    container.addMediaGalleryComponents(gallery);
+  } else if (attachmentGallery) {
+    const name = String(attachmentGallery).replace(/^attachment:\/\//, "");
+    const gallery = new MediaGalleryBuilder().addItems(
+      new MediaGalleryItemBuilder().setURL(`attachment://${name}`)
     );
     container.addMediaGalleryComponents(gallery);
   }
@@ -121,12 +153,14 @@ function buildV2Payload({
     );
   }
 
-  container.addSeparatorComponents(
-    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-  );
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(config.footerText)
-  );
+  if (showFooter) {
+    container.addSeparatorComponents(
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    );
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(config.footerText)
+    );
+  }
 
   const payload = {
     components: [container],
@@ -152,4 +186,6 @@ module.exports = {
   buildV2Payload,
   replyV2,
   updateV2,
+  isEphemeralComponentMessage,
+  ackInteractionForEdit,
 };

@@ -24,17 +24,28 @@ async function main() {
 
   const icons = [];
   for (const def of catalog.icons) {
-    const svgUrl = bootstrapIconSvgUrl(def.icon);
-    try {
-      const svgText = await downloadBootstrapSvg(svgUrl);
-      const svgFile = `assets/emojis/svg/${def.icon}.svg`;
-      fs.writeFileSync(path.join(ASSETS_DIR, "svg", `${def.icon}.svg`), svgText, "utf8");
-
-      const localSvg = fs.readFileSync(
-        path.join(ASSETS_DIR, "svg", `${def.icon}.svg`),
-        "utf8"
-      );
-      const { png, sha256 } = await svgToEmojiPng(localSvg, def.key);
+  let svgUrl;
+  let svgFile;
+  try {
+      let localSvg;
+      if (def.localSvg) {
+        svgFile = `assets/emojis/svg/${def.localSvg}`;
+        const localPath = path.join(ASSETS_DIR, "svg", def.localSvg);
+        localSvg = fs.readFileSync(localPath, "utf8");
+        svgUrl = `local:${def.localSvg}`;
+      } else {
+        svgUrl = bootstrapIconSvgUrl(def.icon);
+        const svgText = await downloadBootstrapSvg(svgUrl);
+        svgFile = `assets/emojis/svg/${def.icon}.svg`;
+        fs.writeFileSync(path.join(ASSETS_DIR, "svg", `${def.icon}.svg`), svgText, "utf8");
+        localSvg = fs.readFileSync(
+          path.join(ASSETS_DIR, "svg", `${def.icon}.svg`),
+          "utf8"
+        );
+      }
+      const { png, sha256 } = await svgToEmojiPng(localSvg, def.key, {
+        preserveColors: Boolean(def.preserveColors),
+      });
       const pngName = `${def.name}.png`;
       fs.writeFileSync(path.join(pngDir, pngName), png);
 

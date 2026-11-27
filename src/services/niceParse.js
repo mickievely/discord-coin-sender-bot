@@ -1,3 +1,26 @@
+/** 주민번호 앞 6자리 YY → 연도 (00–29: 2000년대, 30–99: 1900년대) */
+function inferBirthYearFromYy(yyTwo) {
+  const yy = parseInt(String(yyTwo), 10);
+  if (!Number.isFinite(yy) || yy < 0 || yy > 99) return null;
+  return yy <= 29 ? 2000 + yy : 1900 + yy;
+}
+
+/**
+ * NICE myNum2: 1900년대 남1/여2, 2000년대 남3/여4
+ * @param {string} birth6 YYMMDD
+ * @param {"M"|"F"} sex
+ */
+function niceGenderDigit(birth6, sex) {
+  if (!/^\d{6}$/.test(String(birth6))) {
+    throw new Error("생년월일 6자리를 확인해 주세요.");
+  }
+  const year = inferBirthYearFromYy(birth6.slice(0, 2));
+  if (!year) throw new Error("생년월일 형식이 올바르지 않습니다.");
+  const male = sex === "M";
+  if (year >= 2000) return male ? "3" : "4";
+  return male ? "1" : "2";
+}
+
 /** NICE HTML/JSON 응답에서 성공·실패 메시지 추출 */
 
 function stripScripts(html) {
@@ -50,4 +73,9 @@ function parseVerifyResult(data) {
   };
 }
 
-module.exports = { parseRequestResult, parseVerifyResult };
+module.exports = {
+  parseRequestResult,
+  parseVerifyResult,
+  niceGenderDigit,
+  inferBirthYearFromYy,
+};

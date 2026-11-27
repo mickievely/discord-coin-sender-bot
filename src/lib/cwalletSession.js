@@ -91,13 +91,13 @@ async function getClient() {
   return { client, headers };
 }
 
-async function postApi(urlPath) {
+async function postApi(urlPath, body = {}) {
   const session = await getClient();
   if (!session) return null;
   const { client, headers } = session;
   const res = await client.post(
     urlPath,
-    {},
+    body,
     {
       headers: {
         "Content-Type": "application/json",

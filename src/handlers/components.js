@@ -9,17 +9,20 @@ const {
 const config = require("../config");
 const db = require("../db");
 const exchange = require("../services/exchange");
-const mexc = require("../services/mexc");
+const cwallet = require("../services/cwallet");
 const { getServiceFeeRate } = require("../services/fees");
 const { pendingTx } = require("../state/pending");
-const { buildV2Payload, updateV2 } = require("../ui/v2");
+const {
+  ackInteractionForEdit,
+  buildV2Payload,
+  updateV2,
+} = require("../ui/v2");
 const verifyHandler = require("./verify");
 
 async function ephemeralV2(interaction, options) {
-  if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferReply({ ephemeral: true });
-  }
-  return interaction.editReply(buildV2Payload(options));
+  const payload = buildV2Payload(options);
+  await ackInteractionForEdit(interaction);
+  return interaction.editReply(payload);
 }
 
 const COIN_OPTS = [
@@ -45,6 +48,7 @@ function requireVerified(interaction) {
 
 async function showVerifyRequired(interaction) {
   return ephemeralV2(interaction, {
+    showFooter: false,
     lines: ["**본인인증이 필요합니다**"],
     buttons: [
       {
@@ -168,40 +172,39 @@ async function handleButton(interaction, client) {
     if (!interaction.deferred && !interaction.replied) {
       await interaction.deferUpdate();
     }
+    await interaction.editReply(
+      buildV2Payload({ lines: ["**송금 처리 중…**", "잠시만 기다려 주세요."] })
+    );
+
     const data = pendingTx.get(interaction.user.id);
     if (!data) {
-      return interaction.followUp({
-        ...require("../ui/v2").buildV2Payload({
-          lines: ["세션 만료. 다시 시도해 주세요."],
-        }),
-        ephemeral: true,
-      });
+      return interaction.editReply(
+        buildV2Payload({ lines: ["세션 만료. 다시 시도해 주세요."] })
+      );
     }
 
     if (!db.subtractBalance(interaction.user.id, data.krwAmount)) {
-      return interaction.followUp({
-        ...require("../ui/v2").buildV2Payload({ lines: ["잔액 부족"] }),
-        ephemeral: true,
-      });
+      return interaction.editReply(
+        buildV2Payload({ lines: ["잔액 부족"] })
+      );
     }
 
-    const result = await mexc.withdrawCoin(
-      data.sendAmount,
-      data.address,
-      data.network,
-      data.coin
-    );
+    const result = await cwallet.fulfillBuyerSend({
+      usdtSpend: data.usdtSpend,
+      coin: data.coin,
+      address: data.address,
+      network: data.network,
+    });
 
     pendingTx.delete(interaction.user.id);
 
     if (!result.success) {
       db.addBalance(interaction.user.id, data.krwAmount, "환불");
-      return interaction.followUp({
-        ...require("../ui/v2").buildV2Payload({
+      return interaction.editReply(
+        buildV2Payload({
           lines: ["**송금 실패**", result.error, "금액이 환불되었습니다."],
-        }),
-        ephemeral: true,
-      });
+        })
+      );
     }
 
     db.addTransactionHistory(interaction.user.id, data.krwAmount, "송금", {
@@ -211,16 +214,18 @@ async function handleButton(interaction, client) {
       fee: Math.round(data.totalFeeKrw),
     });
 
-    return interaction.followUp({
-      ...require("../ui/v2").buildV2Payload({
+    return interaction.editReply(
+      buildV2Payload({
         lines: [
           `**${result.coin} 송금 성공**`,
+          result.amount_sent != null
+            ? `수령 수량: **${Number(result.amount_sent).toFixed(6)} ${result.coin}**`
+            : null,
           `TXID: \`${result.txid}\``,
           `링크: ${result.share_link}`,
-        ],
-      }),
-      ephemeral: true,
-    });
+        ].filter(Boolean),
+      })
+    );
   }
 
   return null;
@@ -228,6 +233,9 @@ async function handleButton(interaction, client) {
 
 async function handleSelect(interaction) {
   const id = interaction.customId;
+
+  const verifyHandled = await verifyHandler.routeVerifySelect(interaction);
+  if (verifyHandled !== false) return verifyHandled;
 
   if (id === "purchase_select") {
     const coin = interaction.values[0].toUpperCase();
@@ -353,32 +361,69 @@ async function handleModal(interaction, client) {
     const actualRate = krwRate * (1 + kimchi / 100);
     const coinPrice = await exchange.getCoinPrice(coin);
     const feeRate = getServiceFeeRate() + kimchi / 100;
-    const chainFee = exchange.getTransactionFee(
-      coin,
-      network.toUpperCase()
-    );
-    const exchangeFeeKrw = chainFee * coinPrice * actualRate;
     const serviceFeeKrw = krw * feeRate;
-    const totalFee = serviceFeeKrw + exchangeFeeKrw;
-    const sendKrw = krw - totalFee;
-    const sendAmount = exchange.krwToCoinAmount(sendKrw, coinPrice, actualRate);
+    const sendKrw = krw - serviceFeeKrw;
+    const usdtSpend = sendKrw / actualRate;
+    const upper = coin.toUpperCase();
+
+    let chainFeeCoin = exchange.getTransactionFee(upper, network);
+    if (cwallet.hasSession()) {
+      const liveFee = await cwallet.estimateWithdrawFeeCoin(upper, network);
+      if (liveFee.ok) chainFeeCoin = liveFee.fee;
+    }
+
+    let sendAmount;
+    if (upper === "USDT") {
+      sendAmount = usdtSpend - chainFeeCoin;
+    } else {
+      let swapOut = coinPrice > 0 ? usdtSpend / coinPrice : 0;
+      if (cwallet.hasSession()) {
+        const quote = await cwallet.getSwapQuote(usdtSpend, upper);
+        if (quote.ok) swapOut = quote.toAmount;
+      }
+      sendAmount = swapOut - chainFeeCoin;
+    }
+
+    const minCoin = exchange.MIN_COIN[upper] ?? 0;
+    if (!sendAmount || sendAmount < minCoin) {
+      return interaction.editReply(
+        require("../ui/v2").buildV2Payload({
+          lines: [
+            "스왑·송금 수수료 반영 후 최소 송금액 미달입니다.",
+            `최소 약 ${minCoin} ${upper} (또는 원화 최소 금액 상향)`,
+          ],
+        })
+      );
+    }
+
+    if (upper === "USDT" && usdtSpend < exchange.MIN_COIN.USDT) {
+      return interaction.editReply(
+        require("../ui/v2").buildV2Payload({
+          lines: [`USDT 사용액 최소 ${exchange.MIN_COIN.USDT} (원화 금액을 올려 주세요).`],
+        })
+      );
+    }
 
     pendingTx.set(interaction.user.id, {
-      coin: coin.toUpperCase(),
+      coin: upper,
       network,
       address,
       krwAmount: Math.floor(krw),
+      usdtSpend,
       sendAmount,
-      totalFeeKrw: totalFee,
+      serviceFeeKrw,
+      totalFeeKrw: serviceFeeKrw,
     });
 
     return interaction.editReply(
       require("../ui/v2").buildV2Payload({
         lines: [
-          `**${coin.toUpperCase()} 송금 준비**`,
+          `**${upper} 송금 준비**`,
           `차감: ₩${Math.floor(krw).toLocaleString("ko-KR")}`,
-          `예상 송금: ${sendAmount.toFixed(6)} ${coin.toUpperCase()}`,
-          `수수료 합: ₩${Math.floor(totalFee).toLocaleString("ko-KR")}`,
+          `USDT 사용 예정: **${usdtSpend.toFixed(4)}** (재고에서 스왑·출금)`,
+          `예상 수령: **${sendAmount.toFixed(6)} ${upper}**`,
+          "스왑·네트워크 수수료는 예상 수령량에 반영됩니다.",
+          `서비스 수수료: ₩${Math.floor(serviceFeeKrw).toLocaleString("ko-KR")}`,
           `주소: \`${address}\``,
         ],
         buttons: [

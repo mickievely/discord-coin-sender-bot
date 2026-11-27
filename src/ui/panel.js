@@ -45,7 +45,7 @@ async function buildPanelPayload(refreshLabel) {
       "",
       `### 실시간 재고 (₩) · ${stock.oneLine}`,
       `김치프리미엄 \`${kimchiStr}\``,
-      `수수료(서비스) \`${fee}%\``,
+      `수수료 \`${fee}%\``,
       `갱신 ${refreshLabel}`,
     ],
     buttons: [

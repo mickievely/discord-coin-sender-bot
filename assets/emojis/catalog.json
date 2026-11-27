@@ -8,6 +8,12 @@
     { "key": "svc_minimum", "name": "coin_svc_minimum", "category": "panel", "icon": "bar-chart" },
     { "key": "start_verify", "name": "coin_start_verify", "category": "verify", "icon": "shield-check" },
     { "key": "verify_info", "name": "coin_verify_info", "category": "verify", "icon": "pencil-square" },
+    { "key": "gender_male", "name": "coin_gender_male", "category": "verify", "icon": "gender-male" },
+    { "key": "gender_female", "name": "coin_gender_female", "category": "verify", "icon": "gender-female" },
+    { "key": "telecom_skt", "name": "coin_telecom_skt", "category": "verify", "localSvg": "telecom-skt.svg", "preserveColors": true },
+    { "key": "telecom_kt", "name": "coin_telecom_kt", "category": "verify", "localSvg": "telecom-kt.svg", "preserveColors": true },
+    { "key": "telecom_lg", "name": "coin_telecom_lg", "category": "verify", "localSvg": "telecom-lg.svg", "preserveColors": true },
+    { "key": "telecom_mvno", "name": "coin_telecom_mvno", "category": "verify", "localSvg": "telecom-mvno.svg", "preserveColors": true },
     { "key": "view_history", "name": "coin_view_history", "category": "user", "icon": "clock-history" },
     { "key": "send_coin", "name": "coin_send_coin", "category": "transfer", "icon": "send" }
   ]
