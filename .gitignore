@@ -1,15 +1,18 @@
 # Local secrets and runtime
-config.py
 .env
 *.log
 bot.log
 
-# SQLite / JSON data
-DB/
+# SQLite data (project root only)
+/DB/
 captcha/
 
-# Python
+# Python (legacy)
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Node
+node_modules/
+package-lock.json

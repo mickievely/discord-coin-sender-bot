@@ -1,0 +1,18 @@
+{
+  "name": "discord-coin-sender-bot",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Discord 코인 대행 봇 (Node.js, Components V2, SQLite)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.19.2",
+    "dotenv": "^16.4.7"
+  }
+}

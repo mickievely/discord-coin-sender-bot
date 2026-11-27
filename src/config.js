@@ -1,0 +1,52 @@
+require("dotenv").config();
+
+function intList(raw) {
+  if (!raw || !String(raw).trim()) return [];
+  return String(raw)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => BigInt(s));
+}
+
+function channelId(raw) {
+  if (!raw) return null;
+  const n = BigInt(String(raw).trim());
+  return n === 0n ? null : n;
+}
+
+const SERVICE_DISPLAY_NAME =
+  process.env.SERVICE_DISPLAY_NAME || "코인대행";
+
+module.exports = {
+  token: process.env.DISCORD_TOKEN || "",
+  guildId: process.env.GUILD_ID || null,
+  defaultAdminId: process.env.DEFAULT_ADMIN_ID
+    ? BigInt(process.env.DEFAULT_ADMIN_ID)
+    : 0n,
+  allowedUserIds: intList(process.env.ALLOWED_USER_IDS),
+  serviceDisplayName: SERVICE_DISPLAY_NAME,
+  panelImageUrl: process.env.PANEL_IMAGE_URL || "",
+  embedIconUrl: process.env.EMBED_ICON_URL || process.env.PANEL_IMAGE_URL || "",
+  serviceFeeRate: Number(process.env.SERVICE_FEE_RATE || "0.05"),
+  mexcApiKey: process.env.MEXC_API_KEY || "",
+  mexcSecretKey: process.env.MEXC_SECRET_KEY || "",
+  depositBankName: process.env.DEPOSIT_BANK_NAME || "",
+  depositAccountNo: process.env.DEPOSIT_ACCOUNT_NO || "",
+  depositAccountHolder: process.env.DEPOSIT_ACCOUNT_HOLDER || "",
+  channels: {
+    purchase: channelId(process.env.CHANNEL_PURCHASE_LOG),
+    transfer: channelId(process.env.CHANNEL_TRANSFER_LOG),
+    verify: channelId(process.env.CHANNEL_VERIFY_LOG),
+    charge: channelId(process.env.CHANNEL_CHARGE_LOG),
+    admin: channelId(process.env.CHANNEL_ADMIN_LOG),
+  },
+  coinAddresses: (() => {
+    try {
+      return JSON.parse(process.env.COIN_ADDRESSES || "{}");
+    } catch {
+      return {};
+    }
+  })(),
+  footerText: `© 2026 ${SERVICE_DISPLAY_NAME}. All rights reserved.`,
+};
