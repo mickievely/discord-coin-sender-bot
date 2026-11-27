@@ -2,19 +2,11 @@
 .env
 test/.env
 assets/emojis/registry.local.json
-config.py
 *.log
-bot.log
 
 # SQLite data (project root only)
 /DB/
 captcha/
-
-# Python (legacy)
-__pycache__/
-*.py[cod]
-.venv/
-venv/
 
 # Node
 node_modules/

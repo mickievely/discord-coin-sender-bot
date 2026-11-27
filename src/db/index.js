@@ -17,39 +17,6 @@ function openDb(file) {
   return new DatabaseSync(file);
 }
 
-function migrateLegacyDatabases(db) {
-  const legacyVerify = path.join(DB_DIR, "verify_user.db");
-  const legacyHistory = path.join(DB_DIR, "history.db");
-  const hasLegacy = fs.existsSync(legacyVerify) || fs.existsSync(legacyHistory);
-  if (!hasLegacy) return;
-
-  const userCount =
-    db.prepare("SELECT COUNT(*) AS c FROM users").get()?.c ?? 0;
-  if (userCount > 0) return;
-
-  try {
-    if (fs.existsSync(legacyVerify)) {
-      db.exec(`ATTACH DATABASE '${legacyVerify.replace(/'/g, "''")}' AS legacy_v`);
-      db.exec(`
-        INSERT INTO users (user_id, phone, DOB, name, telecom, Total_amount, now_amount)
-        SELECT user_id, phone, DOB, name, telecom, Total_amount, now_amount FROM legacy_v.users
-      `);
-      db.exec("DETACH DATABASE legacy_v");
-    }
-    if (fs.existsSync(legacyHistory)) {
-      db.exec(`ATTACH DATABASE '${legacyHistory.replace(/'/g, "''")}' AS legacy_h`);
-      db.exec(`
-        INSERT INTO transaction_history (user_id, amount, type, timestamp, txid, coin_type, address, fee)
-        SELECT user_id, amount, type, timestamp, txid, coin_type, address, fee FROM legacy_h.transaction_history
-      `);
-      db.exec("DETACH DATABASE legacy_h");
-    }
-    console.log("[db] legacy verify_user.db / history.db → data.db 이전 완료");
-  } catch (e) {
-    console.error("[db] legacy 이전 실패:", e.message);
-  }
-}
-
 function initSchema() {
   if (schemaReady) return;
   ensureDir();
@@ -79,7 +46,6 @@ function initSchema() {
       fee INTEGER DEFAULT 0
     );
   `);
-  migrateLegacyDatabases(db);
   db.close();
   schemaReady = true;
 }
