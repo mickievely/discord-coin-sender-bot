@@ -46,8 +46,36 @@ function initSchema() {
       fee INTEGER DEFAULT 0
     );
   `);
+  migrateLegacyUserIds(db);
   db.close();
   schemaReady = true;
+}
+
+/** 예전 INTEGER user_id 행을 Discord snowflake 문자열로 맞춤 */
+function migrateLegacyUserIds(db) {
+  const users = db.prepare("SELECT user_id FROM users").all();
+  const updUser = db.prepare(
+    "UPDATE users SET user_id = ? WHERE rowid = ?"
+  );
+  const selRowid = db.prepare(
+    "SELECT rowid FROM users WHERE user_id = ? LIMIT 1"
+  );
+  for (const row of users) {
+    const canonical = userIdKey(row.user_id);
+    if (canonical === String(row.user_id)) continue;
+    const hit = selRowid.get(row.user_id);
+    if (!hit) continue;
+    try {
+      updUser.run(canonical, hit.rowid);
+    } catch {
+      /* duplicate canonical — 수동 정리 필요 */
+    }
+  }
+  db.exec(`
+    UPDATE transaction_history
+    SET user_id = CAST(user_id AS TEXT)
+    WHERE user_id IS NOT NULL AND typeof(user_id) != 'text'
+  `);
 }
 
 function getDb() {
@@ -64,9 +92,15 @@ function userIdKey(userId) {
 }
 
 function getVerifiedUser(userId) {
+  const key = userIdKey(userId);
   const row = getDb()
-    .prepare("SELECT * FROM users WHERE user_id = ?")
-    .get(userIdKey(userId));
+    .prepare(
+      `SELECT * FROM users
+       WHERE user_id = ?
+          OR CAST(user_id AS TEXT) = ?
+       LIMIT 1`
+    )
+    .get(key, key);
   return row || null;
 }
 

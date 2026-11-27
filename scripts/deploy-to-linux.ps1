@@ -1,4 +1,4 @@
-# Deploy discord-coin-sender-bot to Linux over SSH/SCP (secrets stay local, never git).
+﻿# Deploy discord-coin-sender-bot to Linux over SSH/SCP (secrets stay local, never git).
 # Usage:
 #   $env:DEPLOY_HOST = "192.168.0.99"
 #   $env:DEPLOY_USER = "server"
@@ -41,6 +41,10 @@ Push-Location $root
   --exclude=node_modules `
   --exclude=.git `
   --exclude=.cwallet-browser-profile `
+  --exclude=.env `
+  --exclude=secrets `
+  --exclude=DB `
+  --exclude=captcha `
   --exclude=*.log `
   .
 Pop-Location
@@ -61,10 +65,13 @@ fi
 nvm install 22
 nvm use 22
 cd '$RemoteDir'
+mkdir -p DB captcha
+# DB·captcha·.env 는 아카이브에 없음 — 서버 데이터 유지
 tar -xzf /tmp/discord-coin-sender-bot-deploy.tgz
 rm -f /tmp/discord-coin-sender-bot-deploy.tgz
 npm install --omit=dev
 test -f .env || { echo 'Missing .env on server'; exit 1; }
+# 테이블만 없을 때 생성 (기존 data.db 내용 삭제 안 함)
 node scripts/init-db.js
 pm2 delete $Pm2Name 2>/dev/null || true
 pm2 start src/index.js --name $Pm2Name --interpreter "`$(which node)"
