@@ -53,12 +53,14 @@ module.exports = {
   depositAccountNo: process.env.DEPOSIT_ACCOUNT_NO || "",
   depositAccountHolder: process.env.DEPOSIT_ACCOUNT_HOLDER || "",
   channels: {
+    panel: channelIdStr(process.env.CHANNEL_PANEL),
     purchase: channelIdStr(process.env.CHANNEL_PURCHASE_LOG),
     transfer: channelIdStr(process.env.CHANNEL_TRANSFER_LOG),
     verify: channelIdStr(process.env.CHANNEL_VERIFY_LOG),
     charge: channelIdStr(process.env.CHANNEL_CHARGE_LOG),
     admin: channelIdStr(process.env.CHANNEL_ADMIN_LOG),
   },
+  panelMessageId: channelIdStr(process.env.PANEL_MESSAGE_ID),
   coinAddresses: (() => {
     try {
       return JSON.parse(process.env.COIN_ADDRESSES || "{}");

@@ -10,7 +10,7 @@ Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(
 - `src/commands/register.js` — 슬래시 커맨드 정의·등록 (`GUILD_ID` 있으면 길드, 없으면 전역)
 - `src/handlers/` — `slash.js`(슬래시), `components.js`(버튼·셀렉트·모달), `verify.js`(PASS 인증)
 - `src/services/` — 외부 API: `mexc.js`, `exchange.js`(시세·김프), `fees.js`, `niceApi.js`/`niceParse.js`
-- `src/ui/` — `panel.js`(자동 갱신 패널), `v2.js`(Components V2 빌더)
+- `src/ui/` — `panel.js`(`CHANNEL_PANEL` 채널 자동 게시·60초 갱신), `v2.js`(Components V2 빌더)
 - `src/db/index.js` — SQLite 스키마/쿼리. DB 파일은 `DB/` (cwd 기준)
 - `src/lib/auth.js` — 관리자 권한 체크 (`requireAdmin`, `DEFAULT_ADMIN_ID` + `ALLOWED_USER_IDS`)
 - `src/state/` — 메모리 내 임시 상태 (진행 중 거래, 인증 세션)

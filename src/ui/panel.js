@@ -60,17 +60,46 @@ async function sendPanel(channel) {
   return msg;
 }
 
-async function refreshPanel(manual = false) {
+async function refreshPanel() {
   if (!panelMessage) return;
   currentRate = await exchange.getExchangeRate();
-  const label = manual ? "수동" : `${bumpCounter()}초전`;
+  const label = `${bumpCounter()}초전`;
   const payload = await buildPanelPayload(label);
   await panelMessage.edit(payload);
 }
 
-function startPanelRefresh(intervalMs = 300_000) {
+async function initPanel(client) {
+  const channelId = config.channels.panel;
+  if (!channelId) {
+    console.warn("CHANNEL_PANEL 미설정 — 패널 자동 게시 생략");
+    return;
+  }
+  const channel = await client.channels.fetch(channelId).catch(() => null);
+  if (!channel || !channel.isTextBased()) {
+    console.error("CHANNEL_PANEL 채널을 찾을 수 없습니다:", channelId);
+    return;
+  }
+  const mid = config.panelMessageId;
+  if (mid) {
+    try {
+      const msg = await channel.messages.fetch(mid);
+      setPanelMessage(msg);
+      await refreshPanel();
+      console.log("패널 메시지 갱신 준비 (PANEL_MESSAGE_ID)");
+      return;
+    } catch {
+      console.warn("PANEL_MESSAGE_ID 무효 — 새 패널 전송");
+    }
+  }
+  const msg = await sendPanel(channel);
+  console.log(
+    `패널 게시 완료. 고정 갱신은 PANEL_MESSAGE_ID=${msg.id} 로 설정하세요.`
+  );
+}
+
+function startPanelRefresh(intervalMs = 60_000) {
   return setInterval(() => {
-    refreshPanel(false).catch(() => {
+    refreshPanel().catch(() => {
       panelMessage = null;
     });
   }, intervalMs);
@@ -84,6 +113,7 @@ module.exports = {
   buildPanelPayload,
   sendPanel,
   refreshPanel,
+  initPanel,
   startPanelRefresh,
   setPanelMessage,
   get currentRate() {

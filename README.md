@@ -9,6 +9,7 @@
 
 - 공통/비밀: 루트 `.env`
 - 테스트 서버 ID·채널: `test/.env`
+- `CHANNEL_PANEL` / `PANEL_MESSAGE_ID`: 패널 채널·고정할 메시지 ID (없으면 기동 시 새로 게시)
 
 ## 실행
 

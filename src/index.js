@@ -26,6 +26,11 @@ client.once(Events.ClientReady, async (c) => {
   } catch (e) {
     console.error("커맨드 등록 실패:", e.message);
   }
+  try {
+    await panel.initPanel(c);
+  } catch (e) {
+    console.error("패널 초기화 실패:", e.message);
+  }
   panel.startPanelRefresh();
 });
 
