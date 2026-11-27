@@ -92,7 +92,7 @@ function serializeEnv(map, comments = []) {
       ].includes(item)
     ) {
       if (item === "SERVICE_DISPLAY_NAME") lines.push(`${item}=코인대행`);
-      if (item === "SERVICE_FEE_RATE") lines.push(`${item}=0.05`);
+      if (item === "SERVICE_FEE_RATE") lines.push(`${item}=5`);
       if (item === "COIN_ADDRESSES")
         lines.push(`${item}={"TRX":"","LTC":"","BNB":""}`);
       seen.add(item);

@@ -19,6 +19,20 @@ function channelIdStr(raw) {
 const SERVICE_DISPLAY_NAME =
   process.env.SERVICE_DISPLAY_NAME || "코인대행";
 
+/** .env에는 퍼센트 숫자 (예: 5 = 5%). 0~1 소수는 예전 방식(0.05)도 허용 */
+function parseServiceFeeFromEnv(raw) {
+  const n = Number(String(raw ?? "5").trim());
+  if (!Number.isFinite(n) || n < 0) {
+    return { percent: 5, rate: 0.05 };
+  }
+  if (n > 0 && n < 1) {
+    return { percent: n * 100, rate: n };
+  }
+  return { percent: n, rate: n / 100 };
+}
+
+const serviceFee = parseServiceFeeFromEnv(process.env.SERVICE_FEE_RATE);
+
 module.exports = {
   token: process.env.DISCORD_TOKEN || "",
   guildId: process.env.GUILD_ID || null,
@@ -31,7 +45,8 @@ module.exports = {
     process.env.PANEL_IMAGE_URL ||
     "https://cdn.discordapp.com/embed/avatars/0.png",
   embedIconUrl: process.env.EMBED_ICON_URL || process.env.PANEL_IMAGE_URL || "",
-  serviceFeeRate: Number(process.env.SERVICE_FEE_RATE || "0.05"),
+  serviceFeePercent: serviceFee.percent,
+  serviceFeeRate: serviceFee.rate,
   mexcApiKey: process.env.MEXC_API_KEY || "",
   mexcSecretKey: process.env.MEXC_SECRET_KEY || "",
   depositBankName: process.env.DEPOSIT_BANK_NAME || "",
