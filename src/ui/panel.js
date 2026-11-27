@@ -26,7 +26,7 @@ async function stockLines() {
       lines.push(`**${symbol}** · ₩${Math.round(krw).toLocaleString("ko-KR")}`);
     }
   }
-  return lines.length ? lines.join("\n") : "`재고 없음`";
+  return lines.length ? lines.join(" · ") : "`재고 없음`";
 }
 
 async function buildPanelPayload(refreshLabel) {
@@ -43,7 +43,7 @@ async function buildPanelPayload(refreshLabel) {
     lines: [
       `# ${config.serviceDisplayName}`,
       "",
-      `### 실시간 재고 (₩)\n${stock}`,
+      `### 실시간 재고 (₩) · ${stock}`,
       `김치프리미엄 \`${kimchi >= 0 ? "+" : ""}${kimchi.toFixed(2)}%\``,
       `수수료(서비스) \`${fee}%\``,
       `갱신 \`${refreshLabel}\``,
