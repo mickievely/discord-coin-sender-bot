@@ -34,8 +34,9 @@ function buildV2Payload({
   const container = new ContainerBuilder().setAccentColor(accentColor);
 
   for (const line of lines) {
+    const content = String(line ?? "").slice(0, 4000);
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(line.slice(0, 4000))
+      new TextDisplayBuilder().setContent(content || "\u200b")
     );
   }
 

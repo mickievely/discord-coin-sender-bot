@@ -53,25 +53,16 @@ async function main() {
         type: ChannelType.GuildText,
         parent_id: category.id,
         topic: "자동 재고·김프 패널 (봇만 편집)",
-        permission_overwrites: [
-          {
-            id: guildId,
-            type: 0,
-            allow: String(
-              PermissionFlagsBits.ViewChannel |
-                PermissionFlagsBits.ReadMessageHistory
-            ),
-            deny: String(
-              PermissionFlagsBits.SendMessages |
-                PermissionFlagsBits.CreatePublicThreads
-            ),
-          },
-        ],
+        permission_overwrites: [],
       },
     });
     console.log("패널 채널 생성:", panel.name, panel.id);
   } else {
     console.log("패널 채널 있음:", panel.id);
+    await rest.patch(Routes.channel(panel.id), {
+      body: { permission_overwrites: [] },
+    });
+    console.log("패널 채널 권한 초기화 (봇 전송 가능)");
   }
 
   if (!fs.existsSync(testEnvPath)) {
@@ -87,6 +78,7 @@ async function main() {
   }
   fs.writeFileSync(testEnvPath, text, "utf8");
   console.log("test/.env CHANNEL_PANEL 갱신 완료:", panel.id);
+  console.log("재시작 후 test/.env 에 PANEL_MESSAGE_ID=<콘솔 출력 ID> 설정 권장");
 }
 
 main().catch((e) => {
