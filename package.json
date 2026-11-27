@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node src/index.js",
     "init-db": "node scripts/init-db.js",
-    "test:nice": "node scripts/test-nice-init.js"
+    "test:nice": "node scripts/test-nice-init.js",
+    "emojis:sync": "node scripts/emojis-sync-assets.js",
+    "emojis:register": "node scripts/emojis-register.js"
   },
   "engines": {
     "node": ">=22.5.0"
@@ -18,6 +20,7 @@
     "discord.js": "^14.19.2",
     "dotenv": "^16.4.7",
     "qs": "^6.13.1",
+    "sharp": "^0.33.5",
     "tough-cookie": "^5.0.0"
   }
 }

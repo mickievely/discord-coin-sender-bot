@@ -44,6 +44,7 @@ async function replyWithCaptcha(interaction, lines, captchaBuffer) {
           id: "verify_open_info",
           label: "본인정보 입력",
           style: ButtonStyle.Danger,
+          emojiKey: "verify_info",
         },
       ],
     }),

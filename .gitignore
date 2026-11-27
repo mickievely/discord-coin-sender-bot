@@ -1,6 +1,7 @@
 # Local secrets and runtime
 .env
 test/.env
+assets/emojis/registry.local.json
 config.py
 *.log
 bot.log

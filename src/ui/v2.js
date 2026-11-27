@@ -12,6 +12,7 @@ const {
   TextDisplayBuilder,
 } = require("discord.js");
 const config = require("../config");
+const { resolveButtonEmoji } = require("../emojis/render");
 
 function assertImageUrl(url) {
   const u = url || config.panelImageUrl || config.embedIconUrl;
@@ -48,23 +49,29 @@ function buildV2Payload({
   if (buttons.length) {
     const row = new ActionRowBuilder();
     for (const b of buttons.slice(0, 5)) {
-      row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(b.id)
-          .setLabel(b.label)
-          .setStyle(b.style ?? ButtonStyle.Secondary)
-          .setEmoji(b.emoji)
-          .setDisabled(Boolean(b.disabled))
-      );
+      const btn = new ButtonBuilder()
+        .setCustomId(b.id)
+        .setLabel(b.label)
+        .setStyle(b.style ?? ButtonStyle.Secondary)
+        .setDisabled(Boolean(b.disabled));
+      const em =
+        b.emojiKey != null ? resolveButtonEmoji(b.emojiKey) : null;
+      if (em) btn.setEmoji(em);
+      row.addComponents(btn);
     }
     container.addActionRowComponents(row);
   }
 
   for (const sel of selects) {
+    const options = sel.options.map((o) => {
+      if (!o.emojiKey) return o;
+      const em = resolveButtonEmoji(o.emojiKey);
+      return em ? { ...o, emoji: em } : o;
+    });
     const menu = new StringSelectMenuBuilder()
       .setCustomId(sel.id)
       .setPlaceholder(sel.placeholder || "선택")
-      .addOptions(sel.options);
+      .addOptions(options);
     container.addActionRowComponents(
       new ActionRowBuilder().addComponents(menu)
     );

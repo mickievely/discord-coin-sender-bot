@@ -44,11 +44,16 @@ async function buildPanelPayload(refreshLabel) {
       `갱신 \`${refreshLabel}\``,
     ],
     buttons: [
-      { id: "svc_use", label: "대행이용", emoji: "💰" },
-      { id: "svc_purchase", label: "매입하기", style: ButtonStyle.Success, emoji: "💵" },
-      { id: "svc_info", label: "내 정보", emoji: "👤" },
-      { id: "svc_charge", label: "충전하기", emoji: "💳" },
-      { id: "svc_minimum", label: "최소송금", emoji: "📊" },
+      { id: "svc_use", label: "대행이용", emojiKey: "svc_use" },
+      {
+        id: "svc_purchase",
+        label: "매입하기",
+        style: ButtonStyle.Success,
+        emojiKey: "svc_purchase",
+      },
+      { id: "svc_info", label: "내 정보", emojiKey: "svc_info" },
+      { id: "svc_charge", label: "충전하기", emojiKey: "svc_charge" },
+      { id: "svc_minimum", label: "최소송금", emojiKey: "svc_minimum" },
     ],
   });
 }

@@ -17,6 +17,8 @@
 ```bash
 npm install
 npm run init-db
+npm run emojis:sync
+npm run emojis:register   # 애플리케이션 이모지 (assets/emojis/registry.local.json)
 npm start
 ```
 

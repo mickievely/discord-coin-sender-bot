@@ -50,7 +50,12 @@ async function showVerifyRequired(interaction) {
       "아래에서 본인인증을 진행해 주세요.",
     ],
     buttons: [
-      { id: "start_verify", label: "본인인증", style: ButtonStyle.Danger },
+      {
+        id: "start_verify",
+        label: "본인인증",
+        style: ButtonStyle.Danger,
+        emojiKey: "start_verify",
+      },
     ],
   });
 }
@@ -112,7 +117,14 @@ async function handleButton(interaction, client) {
         `보유: ₩${(u.now_amount || 0).toLocaleString("ko-KR")}`,
         `누적: ₩${(u.Total_amount || 0).toLocaleString("ko-KR")}`,
       ],
-      buttons: [{ id: "view_history", label: "거래내역", style: ButtonStyle.Primary }],
+      buttons: [
+        {
+          id: "view_history",
+          label: "거래내역",
+          style: ButtonStyle.Primary,
+          emojiKey: "view_history",
+        },
+      ],
     });
   }
 
@@ -372,7 +384,14 @@ async function handleModal(interaction, client) {
           `수수료 합: ₩${Math.floor(totalFee).toLocaleString("ko-KR")}`,
           `주소: \`${address}\``,
         ],
-        buttons: [{ id: "send_coin", label: "송금하기", style: ButtonStyle.Danger }],
+        buttons: [
+          {
+            id: "send_coin",
+            label: "송금하기",
+            style: ButtonStyle.Danger,
+            emojiKey: "send_coin",
+          },
+        ],
       })
     );
   }

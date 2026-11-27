@@ -8,11 +8,14 @@ const {
   handleModal,
 } = require("./handlers/components");
 const panel = require("./ui/panel");
+const { reloadRegistry } = require("./emojis/registry");
 
 if (!config.token) {
   console.error("DISCORD_TOKEN이 .env에 없습니다.");
   process.exit(1);
 }
+
+reloadRegistry();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],

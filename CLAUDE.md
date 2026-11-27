@@ -11,6 +11,7 @@ Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(
 - `src/handlers/` — `slash.js`(슬래시), `components.js`(버튼·셀렉트·모달), `verify.js`(PASS 인증)
 - `src/services/` — 외부 API: `mexc.js`, `exchange.js`(시세·김프, URL은 `KIMCHI_*`·`USD_KRW_EXCHANGE_URL` 등 env), `fees.js`, `niceApi.js`/`niceParse.js`
 - `src/ui/` — `panel.js`(`CHANNEL_PANEL` 채널 자동 게시·60초 갱신), `v2.js`(Components V2 빌더)
+- `src/emojis/` — Bootstrap Icons(cdnjs) → PNG → **애플리케이션 이모지**만. 버튼은 `emojiKey`, 유니코드 이모지 금지. 에셋은 `assets/emojis/`
 - `src/db/index.js` — SQLite 스키마/쿼리. DB 파일은 `DB/` (cwd 기준)
 - `src/lib/auth.js` — 관리자 권한 체크 (`requireAdmin`, `DEFAULT_ADMIN_ID` + `ALLOWED_USER_IDS`)
 - `src/state/` — 메모리 내 임시 상태 (진행 중 거래, 인증 세션)

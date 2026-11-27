@@ -1,0 +1,14 @@
+{
+  "bootstrapIconsVersion": "1.11.3",
+  "icons": [
+    { "key": "svc_use", "name": "coin_svc_use", "category": "panel", "icon": "cash-coin" },
+    { "key": "svc_purchase", "name": "coin_svc_purchase", "category": "panel", "icon": "cash-stack" },
+    { "key": "svc_info", "name": "coin_svc_info", "category": "panel", "icon": "person" },
+    { "key": "svc_charge", "name": "coin_svc_charge", "category": "panel", "icon": "credit-card" },
+    { "key": "svc_minimum", "name": "coin_svc_minimum", "category": "panel", "icon": "bar-chart" },
+    { "key": "start_verify", "name": "coin_start_verify", "category": "verify", "icon": "shield-check" },
+    { "key": "verify_info", "name": "coin_verify_info", "category": "verify", "icon": "pencil-square" },
+    { "key": "view_history", "name": "coin_view_history", "category": "user", "icon": "clock-history" },
+    { "key": "send_coin", "name": "coin_send_coin", "category": "transfer", "icon": "send" }
+  ]
+}
