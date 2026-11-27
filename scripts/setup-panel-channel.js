@@ -78,7 +78,6 @@ async function main() {
   }
   fs.writeFileSync(testEnvPath, text, "utf8");
   console.log("test/.env CHANNEL_PANEL 갱신 완료:", panel.id);
-  console.log("재시작 후 test/.env 에 PANEL_MESSAGE_ID=<콘솔 출력 ID> 설정 권장");
 }
 
 main().catch((e) => {

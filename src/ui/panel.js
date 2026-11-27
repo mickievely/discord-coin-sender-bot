@@ -3,6 +3,7 @@ const config = require("../config");
 const exchange = require("../services/exchange");
 const mexc = require("../services/mexc");
 const { buildV2Payload } = require("./v2");
+const { persistPanelMessageId } = require("../lib/envFile");
 
 let panelMessage = null;
 let refreshCounter = 0;
@@ -92,9 +93,8 @@ async function initPanel(client) {
     }
   }
   const msg = await sendPanel(channel);
-  console.log(
-    `패널 게시 완료. 고정 갱신은 PANEL_MESSAGE_ID=${msg.id} 로 설정하세요.`
-  );
+  persistPanelMessageId(msg.id);
+  console.log("패널 게시 완료");
 }
 
 function startPanelRefresh(intervalMs = 60_000) {
