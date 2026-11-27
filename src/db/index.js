@@ -1,10 +1,13 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { DatabaseSync } = require("node:sqlite");
+const config = require("../config");
 
 const DB_DIR = path.join(process.cwd(), "DB");
-const VERIFY_DB = path.join(DB_DIR, "verify_user.db");
-const HISTORY_DB = path.join(DB_DIR, "history.db");
+const DATA_DB = path.join(DB_DIR, config.databaseFile);
+
+let sharedDb = null;
+let schemaReady = false;
 
 function ensureDir() {
   if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
@@ -14,11 +17,45 @@ function openDb(file) {
   return new DatabaseSync(file);
 }
 
+function migrateLegacyDatabases(db) {
+  const legacyVerify = path.join(DB_DIR, "verify_user.db");
+  const legacyHistory = path.join(DB_DIR, "history.db");
+  const hasLegacy = fs.existsSync(legacyVerify) || fs.existsSync(legacyHistory);
+  if (!hasLegacy) return;
+
+  const userCount =
+    db.prepare("SELECT COUNT(*) AS c FROM users").get()?.c ?? 0;
+  if (userCount > 0) return;
+
+  try {
+    if (fs.existsSync(legacyVerify)) {
+      db.exec(`ATTACH DATABASE '${legacyVerify.replace(/'/g, "''")}' AS legacy_v`);
+      db.exec(`
+        INSERT INTO users (user_id, phone, DOB, name, telecom, Total_amount, now_amount)
+        SELECT user_id, phone, DOB, name, telecom, Total_amount, now_amount FROM legacy_v.users
+      `);
+      db.exec("DETACH DATABASE legacy_v");
+    }
+    if (fs.existsSync(legacyHistory)) {
+      db.exec(`ATTACH DATABASE '${legacyHistory.replace(/'/g, "''")}' AS legacy_h`);
+      db.exec(`
+        INSERT INTO transaction_history (user_id, amount, type, timestamp, txid, coin_type, address, fee)
+        SELECT user_id, amount, type, timestamp, txid, coin_type, address, fee FROM legacy_h.transaction_history
+      `);
+      db.exec("DETACH DATABASE legacy_h");
+    }
+    console.log("[db] legacy verify_user.db / history.db → data.db 이전 완료");
+  } catch (e) {
+    console.error("[db] legacy 이전 실패:", e.message);
+  }
+}
+
 function initSchema() {
+  if (schemaReady) return;
   ensureDir();
 
-  const verify = openDb(VERIFY_DB);
-  verify.exec(`
+  const db = openDb(DATA_DB);
+  db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       user_id INTEGER PRIMARY KEY,
       phone TEXT,
@@ -29,10 +66,7 @@ function initSchema() {
       now_amount INTEGER DEFAULT 0
     );
   `);
-  verify.close();
-
-  const history = openDb(HISTORY_DB);
-  history.exec(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS transaction_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
@@ -45,54 +79,50 @@ function initSchema() {
       fee INTEGER DEFAULT 0
     );
   `);
-  history.close();
+  migrateLegacyDatabases(db);
+  db.close();
+  schemaReady = true;
 }
 
-initSchema();
-
-function getVerifyDb() {
-  return openDb(VERIFY_DB);
-}
-
-function getHistoryDb() {
-  return openDb(HISTORY_DB);
+function getDb() {
+  initSchema();
+  if (!sharedDb) {
+    sharedDb = openDb(DATA_DB);
+  }
+  return sharedDb;
 }
 
 function getVerifiedUser(userId) {
-  const db = getVerifyDb();
-  const row = db
+  const row = getDb()
     .prepare("SELECT * FROM users WHERE user_id = ?")
     .get(Number(userId));
-  db.close();
   return row || null;
 }
 
 function addVerifiedUser(userId, phone = "", dob = "", name = "", telecom = "") {
-  const db = getVerifyDb();
-  db.prepare(
-    `INSERT OR REPLACE INTO users (user_id, phone, DOB, name, telecom, Total_amount, now_amount)
-     VALUES (?, ?, ?, ?, ?, COALESCE((SELECT Total_amount FROM users WHERE user_id = ?), 0),
-             COALESCE((SELECT now_amount FROM users WHERE user_id = ?), 0))`
-  ).run(
-    Number(userId),
-    phone,
-    dob,
-    name,
-    telecom,
-    Number(userId),
-    Number(userId)
-  );
-  db.close();
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO users (user_id, phone, DOB, name, telecom, Total_amount, now_amount)
+       VALUES (?, ?, ?, ?, ?, COALESCE((SELECT Total_amount FROM users WHERE user_id = ?), 0),
+               COALESCE((SELECT now_amount FROM users WHERE user_id = ?), 0))`
+    )
+    .run(
+      Number(userId),
+      phone,
+      dob,
+      name,
+      telecom,
+      Number(userId),
+      Number(userId)
+    );
 }
 
 function removeVerifiedUser(userId) {
-  const db = getVerifyDb();
-  db.prepare("DELETE FROM users WHERE user_id = ?").run(Number(userId));
-  db.close();
+  getDb().prepare("DELETE FROM users WHERE user_id = ?").run(Number(userId));
 }
 
 function addBalance(userId, amount, type = "충전") {
-  const db = getVerifyDb();
+  const db = getDb();
   const uid = Number(userId);
   const current = db
     .prepare("SELECT Total_amount, now_amount FROM users WHERE user_id = ?")
@@ -109,13 +139,12 @@ function addBalance(userId, amount, type = "충전") {
       "INSERT INTO users (user_id, Total_amount, now_amount) VALUES (?, ?, ?)"
     ).run(uid, amount, amount);
   }
-  db.close();
 
   addTransactionHistory(userId, amount, type, { coinType: "KRW" });
 }
 
 function subtractBalance(userId, amount) {
-  const db = getVerifyDb();
+  const db = getDb();
   const uid = userId === null || userId === undefined ? null : Number(userId);
 
   if (uid === null) {
@@ -124,7 +153,6 @@ function subtractBalance(userId, amount) {
         "UPDATE users SET now_amount = now_amount - ? WHERE now_amount >= ?"
       )
       .run(amount, amount);
-    db.close();
     return (result?.changes ?? 0) > 0;
   }
 
@@ -132,13 +160,11 @@ function subtractBalance(userId, amount) {
     .prepare("SELECT now_amount FROM users WHERE user_id = ?")
     .get(uid);
   if (!current || current.now_amount < amount) {
-    db.close();
     return false;
   }
   db.prepare(
     "UPDATE users SET now_amount = now_amount - ? WHERE user_id = ?"
   ).run(amount, uid);
-  db.close();
   return true;
 }
 
@@ -148,24 +174,21 @@ function addTransactionHistory(
   type,
   { txid = "", coinType = "", address = "", fee = 0 } = {}
 ) {
-  const db = getHistoryDb();
-  db.prepare(
-    `INSERT INTO transaction_history (user_id, amount, type, txid, coin_type, address, fee)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(Number(userId), amount, type, txid, coinType, address, fee);
-  db.close();
+  getDb()
+    .prepare(
+      `INSERT INTO transaction_history (user_id, amount, type, txid, coin_type, address, fee)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(Number(userId), amount, type, txid, coinType, address, fee);
 }
 
 function getTransactionHistory(userId, limit = 50) {
-  const db = getHistoryDb();
-  const rows = db
+  return getDb()
     .prepare(
       `SELECT * FROM transaction_history WHERE user_id = ?
        ORDER BY timestamp DESC LIMIT ?`
     )
     .all(Number(userId), limit);
-  db.close();
-  return rows;
 }
 
 function checkAdmin(userId, defaultAdminId, allowedUserIds = []) {
@@ -174,8 +197,12 @@ function checkAdmin(userId, defaultAdminId, allowedUserIds = []) {
   return allowedUserIds.some((allowedId) => allowedId === id);
 }
 
+initSchema();
+
 module.exports = {
   initSchema,
+  getDb,
+  dataDbPath: DATA_DB,
   getVerifiedUser,
   addVerifiedUser,
   removeVerifiedUser,

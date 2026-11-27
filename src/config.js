@@ -34,6 +34,7 @@ function parseServiceFeeFromEnv(raw) {
 const serviceFee = parseServiceFeeFromEnv(process.env.SERVICE_FEE_RATE);
 
 module.exports = {
+  databaseFile: process.env.DATABASE_FILE || "data.db",
   token: process.env.DISCORD_TOKEN || "",
   guildId: process.env.GUILD_ID || null,
   defaultAdminId: process.env.DEFAULT_ADMIN_ID

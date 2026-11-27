@@ -30,7 +30,7 @@ Windows: `start.bat`
 - NICE PASS SMS 본인인증
 - 코인 송금·매입·충전·거래내역
 - MEXC 출금·잔액
-- SQLite: `DB/verify_user.db`, `history.db`
+- SQLite: `DB/data.db` (users · transaction_history, `DATABASE_FILE`로 변경 가능)
 
 ## PASS 테스트 (캡차 수집)
 

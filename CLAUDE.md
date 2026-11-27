@@ -12,7 +12,7 @@ Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(
 - `src/services/` — 외부 API: `mexc.js`, `exchange.js`(환율·김프는 env URL 각 1개), `fees.js`, `niceApi.js`/`niceParse.js`
 - `src/ui/` — `panel.js`(`CHANNEL_PANEL` 채널 자동 게시·60초 갱신), `v2.js`(Components V2 빌더)
 - `src/emojis/` — Bootstrap Icons(cdnjs) → PNG → **애플리케이션 이모지**만. 버튼은 `emojiKey`, 유니코드 이모지 금지. 에셋은 `assets/emojis/`
-- `src/db/index.js` — SQLite 스키마/쿼리. DB 파일은 `DB/` (cwd 기준)
+- `src/db/index.js` — SQLite 단일 `DB/data.db` (users, transaction_history). 예전 `verify_user.db`/`history.db`는 최초 기동 시 자동 이전
 - `src/lib/auth.js` — 관리자 권한 체크 (`requireAdmin`, `DEFAULT_ADMIN_ID` + `ALLOWED_USER_IDS`)
 - `src/state/` — 메모리 내 임시 상태 (진행 중 거래, 인증 세션)
 
@@ -31,7 +31,7 @@ Discord 코인 대행 봇. Node.js 22.5+, discord.js 14 (Components V2), SQLite(
 - `PANEL_MESSAGE_ID`는 패널 새 게시 시 `src/lib/envFile.js`가 `test/.env`(또는 `ENV_FILE`/루트 `.env`)에 자동 기록
 - 권한 있는 인텐트(MessageContent, GuildMembers, GuildPresences)는 꼭 필요할 때만 추가한다. 추가하면 개발자 포털에서 켜야 한다고 알린다
 - 슬래시 커맨드 옵션은 반드시 `setName` + `setDescription` 둘 다 있어야 한다 (없으면 등록 실패)
-- 돈·코인이 움직이는 로직(송금, 충전, 출금, 수수료)은 서버 측에서 금액·권한·잔액을 검증하고, 처리 내역은 `history.db`와 로그 채널에 남긴다
+- 돈·코인이 움직이는 로직(송금, 충전, 출금, 수수료)은 서버 측에서 금액·권한·잔액을 검증하고, 처리 내역은 `data.db`와 로그 채널에 남긴다
 - 상호작용 핸들러는 3초 안에 `deferReply`/`reply`한다. 오래 걸리는 외부 API 호출 전에는 먼저 defer
 - 에러는 사용자에게는 짧은 한국어 메시지로, 상세는 `console.error`로
 
