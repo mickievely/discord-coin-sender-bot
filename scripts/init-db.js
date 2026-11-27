@@ -1,5 +1,3 @@
-const { initSchema } = require("../src/db");
-
 const { initSchema, dataDbPath } = require("../src/db");
 
 initSchema();
