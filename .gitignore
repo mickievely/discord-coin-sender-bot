@@ -7,6 +7,9 @@ CLAUDE.md
 test/.env
 secrets/*
 !secrets/.gitkeep
+# Cwallet login cookies and browser profile
+**/cwallet-storage-state.json
+**/*cookies*.json
 .cwallet-browser-profile/
 assets/emojis/registry.local.json
 assets/generated/
