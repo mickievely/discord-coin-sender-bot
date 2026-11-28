@@ -2,6 +2,7 @@
   "name": "discord-coin-sender-bot",
   "version": "2.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Discord 코인 대행 봇 (Node.js, Components V2, SQLite)",
   "main": "src/index.js",
   "scripts": {
@@ -19,8 +20,10 @@
   "dependencies": {
     "axios": "^1.7.9",
     "axios-cookiejar-support": "^5.0.5",
+    "crypto-js": "^4.2.0",
     "discord.js": "^14.19.2",
     "dotenv": "^16.4.7",
+    "otplib": "^13.6.0",
     "qs": "^6.13.1",
     "sharp": "^0.33.5",
     "tough-cookie": "^5.0.0"

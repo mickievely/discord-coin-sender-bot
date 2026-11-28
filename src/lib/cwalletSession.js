@@ -3,6 +3,13 @@ const path = require("node:path");
 const axios = require("axios");
 const { CookieJar } = require("tough-cookie");
 const { wrapper } = require("axios-cookiejar-support");
+const {
+  randomSignKey,
+  encryptBody,
+  signKeyHeader,
+  decryptBody,
+  shouldEncrypt,
+} = require("./cwalletSign");
 
 const BASE = "https://my.cwallet.com";
 
@@ -95,22 +102,32 @@ async function postApi(urlPath, body = {}) {
   const session = await getClient();
   if (!session) return null;
   const { client, headers } = session;
-  const res = await client.post(
-    urlPath,
-    body,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Origin: BASE,
-        Referer: `${BASE}/wallet/summary`,
-        ...headers,
-      },
-      validateStatus: () => true,
-      timeout: 20000,
-    }
-  );
-  return res.data;
+  const encrypt = shouldEncrypt(urlPath);
+  const randomKey = encrypt ? randomSignKey() : "";
+  const payload = encrypt
+    ? encryptBody(JSON.stringify(body ?? {}), randomKey)
+    : body;
+  const res = await client.post(urlPath, payload, {
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Origin: BASE,
+      Referer: `${BASE}/wallet/summary`,
+      "X-Device-Type": "web",
+      "X-Device-Scene": "online",
+      ...(encrypt
+        ? {
+            "X-Sign-Source": "CC",
+            "X-Sign-Key": signKeyHeader(randomKey),
+          }
+        : {}),
+      ...headers,
+    },
+    transformRequest: encrypt ? [(data) => data] : undefined,
+    validateStatus: () => true,
+    timeout: 20000,
+  });
+  return decryptBody(res.data);
 }
 
 module.exports = {

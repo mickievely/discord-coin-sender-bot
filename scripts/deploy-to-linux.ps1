@@ -40,6 +40,8 @@ Push-Location $root
 & tar -czf $archive `
   --exclude=node_modules `
   --exclude=.git `
+  --exclude=.cursor `
+  --exclude=CLAUDE.md `
   --exclude=.cwallet-browser-profile `
   --exclude=.env `
   --exclude=secrets `
@@ -69,6 +71,9 @@ mkdir -p DB captcha
 # DB·captcha·.env 는 아카이브에 없음 — 서버 데이터 유지
 tar -xzf /tmp/discord-coin-sender-bot-deploy.tgz
 rm -f /tmp/discord-coin-sender-bot-deploy.tgz
+# Cursor rules·로컬 에이전트 문서는 서버에 두지 않음
+rm -rf .cursor 2>/dev/null || true
+rm -f CLAUDE.md 2>/dev/null || true
 npm install --omit=dev
 test -f .env || { echo 'Missing .env on server'; exit 1; }
 # 테이블만 없을 때 생성 (기존 data.db 내용 삭제 안 함)

@@ -75,7 +75,7 @@ async function main() {
         sha256,
         svgUrl,
         svgFile,
-        pngFile: path.join("assets", "emojis", "png", pngName),
+        pngFile: `assets/emojis/png/${pngName}`,
         discordId: null,
       });
     } catch (e) {

@@ -116,6 +116,7 @@ async function getWithdrawFee(chain_id, contract) {
 }
 
 function txLink(txid, coin, network) {
+  if (!txid || !isLikelyOnChainTxid(txid)) return null;
   const c = coin.toUpperCase();
   const net = String(network || "").toLowerCase();
   if (c === "TRX" || net === "trc20") {
@@ -127,12 +128,71 @@ function txLink(txid, coin, network) {
   return `https://bscscan.com/tx/${txid}`;
 }
 
-function formatAmount(amount) {
+/** bill_id·주문번호와 구분 — TXID처럼 보이는 온체인 해시만 */
+function isLikelyOnChainTxid(id) {
+  const s = String(id || "").trim();
+  if (!s || s.length < 16) return false;
+  if (/^\d{18,}$/.test(s)) return false;
+  if (/^[A-Fa-f0-9]{64}$/.test(s)) return true;
+  if (/^[A-Fa-f0-9]{40}$/.test(s)) return true;
+  if (/^T[A-Za-z0-9]{30,}$/.test(s)) return true;
+  return s.length >= 32 && /[A-Fa-z]/.test(s);
+}
+
+function extractTxidFromWithdrawBody(body, billId) {
+  const candidates = [
+    body.txid,
+    body.hash,
+    body.tx_hash,
+    body.withdraw_hash,
+    body.chain_hash,
+    body.chain_txid,
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (isLikelyOnChainTxid(c)) return String(c);
+  }
+  const url = body.txid_url || body.tx_url || body.explorer_url;
+  if (url) {
+    const m =
+      url.match(/\/transaction\/([A-Fa-f0-9]{16,})/i) ||
+      url.match(/\/tx\/(0x[A-Fa-f0-9]{40,})/i);
+    if (m) return m[1];
+  }
+  return isLikelyOnChainTxid(billId) ? String(billId) : null;
+}
+
+async function waitForWithdrawTxid(billId, symbol, attempts = 6) {
+  for (let i = 0; i < attempts; i++) {
+    const detail = await cwalletSession.postApi(
+      "/cctip/v1/transaction/detail/get",
+      { bill_id: billId, symbol }
+    );
+    if (detail?.code === 10000 && detail.data) {
+      const txid = extractTxidFromWithdrawBody(detail.data, billId);
+      if (txid) return txid;
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return null;
+}
+
+/** Cwallet/Web과 동일: precision 자리로 내림, 지수 표기 제거 */
+function formatCoinAmount(amount, precision = 8) {
   const n = Number(amount);
   if (!Number.isFinite(n) || n <= 0) return null;
-  return String(amount)
-    .replace(/[^\d.]/g, "")
-    .trim();
+  const p = Math.max(0, Math.min(18, Number(precision) || 8));
+  const scale = 10 ** p;
+  const floored = Math.floor(n * scale + 1e-12) / scale;
+  const s = floored.toFixed(p).replace(/\.?0+$/, "");
+  if (!s || !/^\d+(\.\d+)?$/.test(s)) return null;
+  return s;
+}
+
+function formatAmount(amount, precision) {
+  if (precision != null) return formatCoinAmount(amount, precision);
+  const n = Number(amount);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return formatCoinAmount(n, 8);
 }
 
 async function swapMarketUsdtToCoin({
@@ -153,15 +213,24 @@ async function swapMarketUsdtToCoin({
     return { success: false, error: rate?.msg || "스왑 시세 조회 실패" };
   }
 
-  const fromAmt = formatAmount(fromUsdtAmount);
+  const fromAmt = formatCoinAmount(fromUsdtAmount, 6);
   if (!fromAmt) return { success: false, error: "스왑 금액 오류" };
 
+  const toPrecision = 6;
   let toAmt = toQuantity;
   if (!toAmt) {
-    const r = Number(rate.data.rate);
-    toAmt = (Number(fromAmt) * r).toFixed(8);
+    const fromApi = parseFloat(
+      rate.data.to_amount ?? rate.data.to_quantity ?? rate.data.quantity
+    );
+    if (Number.isFinite(fromApi) && fromApi > 0) {
+      toAmt = formatCoinAmount(fromApi, toPrecision);
+    } else {
+      const r = Number(rate.data.rate);
+      toAmt = formatCoinAmount(Number(fromAmt) * r, toPrecision);
+    }
+  } else {
+    toAmt = formatCoinAmount(toAmt, toPrecision);
   }
-  toAmt = formatAmount(toAmt);
 
   const sec = await transactionPreCheck("trade.swap.market", {
     quote_id: rate.data.pre_id,
@@ -170,7 +239,13 @@ async function swapMarketUsdtToCoin({
     from_amount: fromAmt,
     to_amount: toAmt,
   });
-  if (!sec.ok) return { success: false, error: sec.error };
+  if (!sec.ok) {
+    const { mapSecurityError } = require("./cwalletSecurity");
+    return {
+      success: false,
+      error: mapSecurityError(sec.error) || sec.error,
+    };
+  }
 
   const submit = await cwalletSession.postApi(
     "/cctip/v1/swap/coin/order/submit",
@@ -239,16 +314,82 @@ async function getSwapQuote(fromUsdtAmount, toSymbol) {
   };
 }
 
-async function estimateWithdrawFeeCoin(symbol, network) {
+/** 웹 송금과 동일. 숫자 Cwallet ID는 내부 송금(2), 그 외 주소는 온체인(1). */
+function isCwalletId(address) {
+  return /^[0-9]{4,}$/.test(String(address || "").trim());
+}
+
+function submitTypeFor(address) {
+  return isCwalletId(address) ? 2 : 1;
+}
+
+/**
+ * 웹 Send 페이지와 같은 수수료.
+ * 내부 주소·Cwallet ID는 0, 외부 주소는 fee.value (risk_value 아님).
+ */
+async function resolveWithdrawFee({ token, address, grossAmount }) {
+  const feeRes = await getWithdrawFee(token.chain_id, token.contract);
+  if (!feeRes.ok) return feeRes;
+
+  const networkFee = String(feeRes.fee.value ?? "0");
+  const sameToken =
+    String(feeRes.fee.symbol || token.symbol).toUpperCase() ===
+    String(token.symbol || "").toUpperCase();
+  const submitType = submitTypeFor(address);
+
+  if (isCwalletId(address)) {
+    return { ok: true, feeStr: "0", sameToken, submitType, isInner: true };
+  }
+  if (!String(address || "").trim()) {
+    return { ok: true, feeStr: networkFee, sameToken, submitType, isInner: false };
+  }
+
+  const check = await cwalletSession.postApi(
+    "/cctip/v1/account/asset/withdraw/check",
+    {
+      chain_id: token.chain_id,
+      contract: token.contract ?? "",
+      address: String(address).trim(),
+      memo: "",
+      amount: String(grossAmount),
+      submit_type: submitType,
+    }
+  );
+  if (check?.code !== 10000) {
+    const { mapSecurityError } = require("./cwalletSecurity");
+    return {
+      ok: false,
+      error: mapSecurityError(check?.msg, check?.code),
+    };
+  }
+
+  const isInner = Boolean(check.data?.is_inner_tx);
+  return {
+    ok: true,
+    feeStr: isInner ? "0" : networkFee,
+    sameToken,
+    submitType,
+    isInner,
+  };
+}
+
+async function estimateWithdrawFeeCoin(symbol, network, address) {
   const resolved = await resolveChainToken(symbol, network);
   if (!resolved.ok) return resolved;
-  const feeRes = await getWithdrawFee(
-    resolved.token.chain_id,
-    resolved.token.contract
-  );
-  if (!feeRes.ok) return { ok: false, error: feeRes.error };
-  const fee = parseFloat(feeRes.fee.risk_value) || 0;
-  return { ok: true, fee };
+  const quote = await resolveWithdrawFee({
+    token: resolved.token,
+    address,
+    grossAmount: "10",
+  });
+  if (!quote.ok) {
+    const feeRes = await getWithdrawFee(
+      resolved.token.chain_id,
+      resolved.token.contract
+    );
+    if (!feeRes.ok) return { ok: false, error: feeRes.error };
+    return { ok: true, fee: parseFloat(feeRes.fee.value) || 0 };
+  }
+  return { ok: true, fee: parseFloat(quote.feeStr) || 0 };
 }
 
 async function withdrawOnChain({
@@ -257,16 +398,28 @@ async function withdrawOnChain({
   address,
   memo = "",
 }) {
-  const value = formatAmount(amount);
-  if (!value) return { success: false, error: "송금 수량 오류" };
+  const precision = Number(token.precision) || 8;
+  const gross = formatCoinAmount(amount, precision);
+  if (!gross) return { success: false, error: "송금 수량 오류" };
 
-  const feeRes = await getWithdrawFee(token.chain_id, token.contract);
-  if (!feeRes.ok) return { success: false, error: feeRes.error };
-  const fee = feeRes.fee;
+  const quote = await resolveWithdrawFee({
+    token,
+    address,
+    grossAmount: gross,
+  });
+  if (!quote.ok) return { success: false, error: quote.error };
+
+  let value = gross;
+  if (quote.sameToken && Number(quote.feeStr) > 0) {
+    value = formatCoinAmount(Number(gross) - Number(quote.feeStr), precision);
+    if (!value) {
+      return { success: false, error: "송금액이 출금 수수료보다 작습니다." };
+    }
+  }
 
   const billRes = await cwalletSession.postApi(
     "/cctip/v1/account/asset/withdraw/new",
-    { submit_type: 4 }
+    { submit_type: quote.submitType }
   );
   if (billRes?.code !== 10000 || !billRes?.data) {
     return { success: false, error: billRes?.msg || "출금 주문 생성 실패" };
@@ -276,17 +429,19 @@ async function withdrawOnChain({
   const withdrawPayload = {
     bill_id,
     chain_id: token.chain_id,
-    contract: token.contract,
+    contract: token.contract ?? "",
     symbol: token.symbol,
     amount: value,
-    fee: fee.risk_value,
-    destination: address,
+    fee: quote.feeStr,
+    destination: String(address).trim(),
     memo: memo || "",
-    submit_type: 4,
+    submit_type: quote.submitType,
   };
 
   const sec = await transactionPreCheck("wallet.withdraw", withdrawPayload);
-  if (!sec.ok) return { success: false, error: sec.error };
+  if (!sec.ok) {
+    return { success: false, error: sec.error || "보안 확인 실패" };
+  }
 
   const submit = await cwalletSession.postApi(
     "/cctip/v1/account/asset/withdraw/submit",
@@ -296,11 +451,11 @@ async function withdrawOnChain({
       address: String(address).trim(),
       value,
       timestamp: Date.now(),
-      fee: fee.risk_value,
+      fee: quote.feeStr,
       chain_id: token.chain_id,
-      submit_type: 4,
+      submit_type: quote.submitType,
       memo: memo || "",
-      contract: token.contract,
+      contract: token.contract ?? "",
       operation_id: sec.operation_id,
       operation_grant_token: sec.operation_grant_token,
       security_payload_version: sec.security_payload_version,
@@ -308,31 +463,42 @@ async function withdrawOnChain({
   );
 
   if (submit?.code !== 10000) {
-    return { success: false, error: submit?.msg || "출금 실패" };
+    const { mapSecurityError } = require("./cwalletSecurity");
+    return {
+      success: false,
+      error: mapSecurityError(submit?.msg, submit?.code) || submit?.msg || "출금 실패",
+    };
   }
 
   const body = submit.data || {};
-  const txid =
-    body.txid ||
-    body.hash ||
-    body.record_id ||
-    body.order_no ||
-    bill_id;
+  let txid = extractTxidFromWithdrawBody(body, bill_id);
+  if (!txid) {
+    await new Promise((r) => setTimeout(r, 2000));
+    txid = await waitForWithdrawTxid(bill_id, token.symbol);
+    if (!txid) txid = extractTxidFromWithdrawBody(body, bill_id);
+  }
+
+  const share_link =
+    body.txid_url ||
+    body.tx_url ||
+    (txid ? txLink(txid, token.symbol, token.network) : null);
 
   return {
     success: true,
-    txid: String(txid),
+    txid: txid || String(bill_id),
+    txid_on_chain: Boolean(txid),
     bill_id,
     network: token.network || token.chain_id,
-    share_link: body.txid_url || txLink(txid, token.symbol, token.network),
-    fee: parseFloat(fee.risk_value) || 0,
+    share_link,
+    fee: parseFloat(quote.feeStr) || 0,
+    amount_sent: value,
   };
 }
 
 /**
  * 구매자가 낸 원화 → 서비스 수수료 제외 USDT 예산만 사용.
- * USDT: 출금 수수료는 수령액에서 차감.
- * 기타: USDT 전량 스왑 → 실제 받은 수량 − 출금 수수료 만큼 전송 (스왑 수수료 구매자 부담).
+ * USDT는 그 예산만큼, 다른 코인은 스왑으로 받은 수량만큼 출금한다.
+ * 네트워크 수수료는 웹과 같이 수령액에서 빼고, 내부 주소면 0이다.
  */
 async function fulfillBuyerSend({ usdtSpend, coin, address, network }) {
   if (!hasSession()) {
@@ -347,13 +513,6 @@ async function fulfillBuyerSend({ usdtSpend, coin, address, network }) {
 
   const resolved = await resolveChainToken(upper, network);
   if (!resolved.ok) return { success: false, error: resolved.error };
-
-  const feeRes = await getWithdrawFee(
-    resolved.token.chain_id,
-    resolved.token.contract
-  );
-  if (!feeRes.ok) return { success: false, error: feeRes.error };
-  const withdrawFee = parseFloat(feeRes.fee.risk_value) || 0;
 
   const balances = await getAllBalances();
   const usdtBal = balances.USDT || 0;
@@ -371,12 +530,10 @@ async function fulfillBuyerSend({ usdtSpend, coin, address, network }) {
   let sendQty;
 
   if (upper === "USDT") {
-    sendQty = spend - withdrawFee;
-    if (sendQty <= 0) {
-      return {
-        success: false,
-        error: "송금액이 출금 수수료보다 작습니다.",
-      };
+    const precision = Number(resolved.token.precision) || 6;
+    sendQty = formatCoinAmount(spend, precision);
+    if (!sendQty) {
+      return { success: false, error: "송금 수량 오류" };
     }
   } else {
     const before = balances[upper] || 0;
@@ -400,17 +557,15 @@ async function fulfillBuyerSend({ usdtSpend, coin, address, network }) {
       };
     }
 
-    sendQty = gained - withdrawFee;
-    if (sendQty <= 0) {
-      return {
-        success: false,
-        error: "스왑 결과가 출금 수수료보다 작습니다.",
-      };
+    const precision = Number(resolved.token.precision) || 6;
+    sendQty = formatCoinAmount(gained, precision);
+    if (!sendQty) {
+      return { success: false, error: "스왑 후 송금 수량이 없습니다." };
     }
   }
 
   const minCoin = exchange.MIN_COIN[upper] ?? 0;
-  if (sendQty < minCoin) {
+  if (Number(sendQty) < minCoin) {
     return {
       success: false,
       error: `최소 송금 미달 (${minCoin} ${upper})`,
@@ -427,12 +582,13 @@ async function fulfillBuyerSend({ usdtSpend, coin, address, network }) {
   return {
     success: true,
     txid: send.txid,
+    txid_on_chain: send.txid_on_chain,
     network: send.network,
     coin: upper,
     to_address: address,
     share_link: send.share_link,
     fee: send.fee,
-    amount_sent: sendQty,
+    amount_sent: send.amount_sent || sendQty,
     usdt_spend: spend,
   };
 }

@@ -23,7 +23,10 @@ async function main() {
   const payloads = [];
 
   for (const row of reg.icons || []) {
-    const pngPath = path.join(process.cwd(), row.pngFile);
+    const pngPath = path.join(
+      process.cwd(),
+      ...String(row.pngFile).split(/[/\\]/)
+    );
     if (!fs.existsSync(pngPath)) {
       logEmoji("error", row.key, "png_missing", { pngPath });
       process.exit(1);

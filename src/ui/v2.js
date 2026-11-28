@@ -179,7 +179,14 @@ async function replyV2(interaction, options) {
 }
 
 async function updateV2(interaction, options) {
-  return interaction.update(buildV2Payload(options));
+  const payload = buildV2Payload(options);
+  if (isEphemeralComponentMessage(interaction)) {
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate();
+    }
+    return interaction.editReply(payload);
+  }
+  return interaction.update(payload);
 }
 
 module.exports = {

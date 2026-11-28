@@ -169,9 +169,7 @@ async function handleButton(interaction, client) {
   }
 
   if (id === "send_coin") {
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferUpdate();
-    }
+    await ackInteractionForEdit(interaction);
     await interaction.editReply(
       buildV2Payload({ lines: ["**송금 처리 중…**", "잠시만 기다려 주세요."] })
     );
@@ -202,10 +200,16 @@ async function handleButton(interaction, client) {
       db.addBalance(interaction.user.id, data.krwAmount, "환불");
       return interaction.editReply(
         buildV2Payload({
+          showFooter: false,
           lines: ["**송금 실패**", result.error, "금액이 환불되었습니다."],
         })
       );
     }
+
+    const txidLine =
+      result.txid_on_chain !== false
+        ? `TXID: \`${result.txid}\``
+        : `주문번호: \`${result.txid}\` (온체인 TXID는 Cwallet에서 확인)`;
 
     db.addTransactionHistory(interaction.user.id, data.krwAmount, "송금", {
       txid: result.txid,
@@ -214,15 +218,20 @@ async function handleButton(interaction, client) {
       fee: Math.round(data.totalFeeKrw),
     });
 
+    const netKrw =
+      data.netReceiveKrw != null
+        ? `예상수령: **₩${Number(data.netReceiveKrw).toLocaleString("ko-KR")}**`
+        : null;
+
     return interaction.editReply(
       buildV2Payload({
+        showFooter: false,
         lines: [
-          `**${result.coin} 송금 성공**`,
-          result.amount_sent != null
-            ? `수령 수량: **${Number(result.amount_sent).toFixed(6)} ${result.coin}**`
-            : null,
-          `TXID: \`${result.txid}\``,
-          `링크: ${result.share_link}`,
+          `**${result.coin} 송금 완료**`,
+          `이용금액: ₩${data.krwAmount.toLocaleString("ko-KR")}`,
+          netKrw,
+          txidLine,
+          result.share_link ? `트랜잭션: ${result.share_link}` : null,
         ].filter(Boolean),
       })
     );
@@ -324,7 +333,9 @@ async function handleModal(interaction, client) {
   }
 
   if (interaction.customId.startsWith("amount_modal_")) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
     const parts = interaction.customId.split("_");
     const coin = parts[parts.length - 1];
     const network = parts[parts.length - 2];
@@ -362,13 +373,17 @@ async function handleModal(interaction, client) {
     const coinPrice = await exchange.getCoinPrice(coin);
     const feeRate = getServiceFeeRate() + kimchi / 100;
     const serviceFeeKrw = krw * feeRate;
-    const sendKrw = krw - serviceFeeKrw;
+    const sendKrw = Math.floor(krw - serviceFeeKrw);
     const usdtSpend = sendKrw / actualRate;
     const upper = coin.toUpperCase();
 
     let chainFeeCoin = exchange.getTransactionFee(upper, network);
     if (cwallet.hasSession()) {
-      const liveFee = await cwallet.estimateWithdrawFeeCoin(upper, network);
+      const liveFee = await cwallet.estimateWithdrawFeeCoin(
+        upper,
+        network,
+        address
+      );
       if (liveFee.ok) chainFeeCoin = liveFee.fee;
     }
 
@@ -409,6 +424,7 @@ async function handleModal(interaction, client) {
       network,
       address,
       krwAmount: Math.floor(krw),
+      netReceiveKrw: sendKrw,
       usdtSpend,
       sendAmount,
       serviceFeeKrw,
@@ -418,13 +434,10 @@ async function handleModal(interaction, client) {
     return interaction.editReply(
       require("../ui/v2").buildV2Payload({
         lines: [
-          `**${upper} 송금 준비**`,
-          `차감: ₩${Math.floor(krw).toLocaleString("ko-KR")}`,
-          `USDT 사용 예정: **${usdtSpend.toFixed(4)}** (재고에서 스왑·출금)`,
-          `예상 수령: **${sendAmount.toFixed(6)} ${upper}**`,
-          "스왑·네트워크 수수료는 예상 수령량에 반영됩니다.",
-          `서비스 수수료: ₩${Math.floor(serviceFeeKrw).toLocaleString("ko-KR")}`,
-          `주소: \`${address}\``,
+          `**${upper} 송금 확인**`,
+          `이용금액: ₩${Math.floor(krw).toLocaleString("ko-KR")}`,
+          `예상수령: **₩${sendKrw.toLocaleString("ko-KR")}**`,
+          address,
         ],
         buttons: [
           {

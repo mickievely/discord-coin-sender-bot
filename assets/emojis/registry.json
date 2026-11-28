@@ -1,6 +1,6 @@
 {
   "bootstrapIconsVersion": "1.11.3",
-  "updatedAt": "2026-11-27T04:51:41.459Z",
+  "updatedAt": "2026-11-27T04:52:28.523Z",
   "icons": [
     {
       "key": "svc_use",
@@ -9,7 +9,7 @@
       "sha256": "8b323b0bd4c6943dc6a841f72ed63660ed7ef096afdcccad42799ea0106d810f",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/cash-coin.svg",
       "svgFile": "assets/emojis/svg/cash-coin.svg",
-      "pngFile": "assets\\emojis\\png\\coin_svc_use.png",
+      "pngFile": "assets/emojis/png/coin_svc_use.png",
       "discordId": null
     },
     {
@@ -19,7 +19,7 @@
       "sha256": "31fc5fab365f403fc599c99cf8337c3801a021c9b95966d06eec8e819eaebc9f",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/cash-stack.svg",
       "svgFile": "assets/emojis/svg/cash-stack.svg",
-      "pngFile": "assets\\emojis\\png\\coin_svc_purchase.png",
+      "pngFile": "assets/emojis/png/coin_svc_purchase.png",
       "discordId": null
     },
     {
@@ -29,7 +29,7 @@
       "sha256": "7231885864131ef48ddaac1858e95849b02029f7d4d309e7aceb5de9f62bde93",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/person.svg",
       "svgFile": "assets/emojis/svg/person.svg",
-      "pngFile": "assets\\emojis\\png\\coin_svc_info.png",
+      "pngFile": "assets/emojis/png/coin_svc_info.png",
       "discordId": null
     },
     {
@@ -39,7 +39,7 @@
       "sha256": "1cc9f7adece78f5807fafef25bdd3b2879be9de408de6cfbe1aa14cde1a096f0",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/credit-card.svg",
       "svgFile": "assets/emojis/svg/credit-card.svg",
-      "pngFile": "assets\\emojis\\png\\coin_svc_charge.png",
+      "pngFile": "assets/emojis/png/coin_svc_charge.png",
       "discordId": null
     },
     {
@@ -49,7 +49,7 @@
       "sha256": "ba31917c53d807da2139f6c8451406978fc010087c8cb5666d859eca98e5dc76",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/bar-chart.svg",
       "svgFile": "assets/emojis/svg/bar-chart.svg",
-      "pngFile": "assets\\emojis\\png\\coin_svc_minimum.png",
+      "pngFile": "assets/emojis/png/coin_svc_minimum.png",
       "discordId": null
     },
     {
@@ -59,7 +59,7 @@
       "sha256": "f741c6f850614b9da120c5ea55b646248cfbe3746aab28afd05c17d04975bc83",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/shield-check.svg",
       "svgFile": "assets/emojis/svg/shield-check.svg",
-      "pngFile": "assets\\emojis\\png\\coin_start_verify.png",
+      "pngFile": "assets/emojis/png/coin_start_verify.png",
       "discordId": null
     },
     {
@@ -69,7 +69,7 @@
       "sha256": "3097323b8f5ed1ad2fe0de164204ecc05badac996386423bf9740c180b2bb891",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/pencil-square.svg",
       "svgFile": "assets/emojis/svg/pencil-square.svg",
-      "pngFile": "assets\\emojis\\png\\coin_verify_info.png",
+      "pngFile": "assets/emojis/png/coin_verify_info.png",
       "discordId": null
     },
     {
@@ -79,7 +79,7 @@
       "sha256": "c0f7201d5e09ed0d060e041d5d5f22a60dab14412bad2cedc0f5ca90a867ca54",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/gender-male.svg",
       "svgFile": "assets/emojis/svg/gender-male.svg",
-      "pngFile": "assets\\emojis\\png\\coin_gender_male.png",
+      "pngFile": "assets/emojis/png/coin_gender_male.png",
       "discordId": null
     },
     {
@@ -89,7 +89,7 @@
       "sha256": "797e9a0a506b2e60620414e002fa008a58768608b9e84c2af9dfd2cf4c127e63",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/gender-female.svg",
       "svgFile": "assets/emojis/svg/gender-female.svg",
-      "pngFile": "assets\\emojis\\png\\coin_gender_female.png",
+      "pngFile": "assets/emojis/png/coin_gender_female.png",
       "discordId": null
     },
     {
@@ -99,7 +99,7 @@
       "sha256": "d45cf306c55c977744ac08f1bb81f423ab380aad6357a82158faf996050753af",
       "svgUrl": "local:telecom-skt.svg",
       "svgFile": "assets/emojis/svg/telecom-skt.svg",
-      "pngFile": "assets\\emojis\\png\\coin_telecom_skt.png",
+      "pngFile": "assets/emojis/png/coin_telecom_skt.png",
       "discordId": null
     },
     {
@@ -109,7 +109,7 @@
       "sha256": "9c52476cd6a0faa5944301b3ba23ff867cadda9b23db7ddd9a60bb205d12c0ee",
       "svgUrl": "local:telecom-kt.svg",
       "svgFile": "assets/emojis/svg/telecom-kt.svg",
-      "pngFile": "assets\\emojis\\png\\coin_telecom_kt.png",
+      "pngFile": "assets/emojis/png/coin_telecom_kt.png",
       "discordId": null
     },
     {
@@ -119,7 +119,7 @@
       "sha256": "84a72ce2b95042bcab7ba19bec999b0fb9c4a1b21393bdcfd0eb57c571614b7f",
       "svgUrl": "local:telecom-lg.svg",
       "svgFile": "assets/emojis/svg/telecom-lg.svg",
-      "pngFile": "assets\\emojis\\png\\coin_telecom_lg.png",
+      "pngFile": "assets/emojis/png/coin_telecom_lg.png",
       "discordId": null
     },
     {
@@ -129,7 +129,7 @@
       "sha256": "cc6ed206449562cdb79c371b4e5e6fef3b4b17681a17803c4556e7019865d325",
       "svgUrl": "local:telecom-mvno.svg",
       "svgFile": "assets/emojis/svg/telecom-mvno.svg",
-      "pngFile": "assets\\emojis\\png\\coin_telecom_mvno.png",
+      "pngFile": "assets/emojis/png/coin_telecom_mvno.png",
       "discordId": null
     },
     {
@@ -139,7 +139,7 @@
       "sha256": "360012c1706a67acb2b5d1ffd93a3dcb9e09427a5284261cf6fee1a48db2c6d0",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/clock-history.svg",
       "svgFile": "assets/emojis/svg/clock-history.svg",
-      "pngFile": "assets\\emojis\\png\\coin_view_history.png",
+      "pngFile": "assets/emojis/png/coin_view_history.png",
       "discordId": null
     },
     {
@@ -149,7 +149,7 @@
       "sha256": "9a00b3fdb845ef24310e80798f42c62a10dfa8f5fb2f17c269f9037ce6b559af",
       "svgUrl": "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/icons/send.svg",
       "svgFile": "assets/emojis/svg/send.svg",
-      "pngFile": "assets\\emojis\\png\\coin_send_coin.png",
+      "pngFile": "assets/emojis/png/coin_send_coin.png",
       "discordId": null
     },
     {
@@ -159,7 +159,7 @@
       "sha256": "d89dbd1daffb73f16519f33a7b39583720906168bec3724246e4bfd792529e8e",
       "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/usdt.svg",
       "svgFile": "assets/emojis/svg/crypto-usdt.svg",
-      "pngFile": "assets\\emojis\\png\\coin_usdt.png",
+      "pngFile": "assets/emojis/png/coin_usdt.png",
       "discordId": null
     },
     {
@@ -169,7 +169,7 @@
       "sha256": "ce967ee196d9b669e9a63e5ab451c9a3a485111de68a16ac99217e45e48b0053",
       "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/trx.svg",
       "svgFile": "assets/emojis/svg/crypto-trx.svg",
-      "pngFile": "assets\\emojis\\png\\coin_trx.png",
+      "pngFile": "assets/emojis/png/coin_trx.png",
       "discordId": null
     },
     {
@@ -179,7 +179,7 @@
       "sha256": "00045b2bdc2b6961f6f6589dcb1ecfcf240f6dbf008bac4022d208a543b2f769",
       "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/ltc.svg",
       "svgFile": "assets/emojis/svg/crypto-ltc.svg",
-      "pngFile": "assets\\emojis\\png\\coin_ltc.png",
+      "pngFile": "assets/emojis/png/coin_ltc.png",
       "discordId": null
     },
     {
@@ -189,7 +189,7 @@
       "sha256": "1b720d292d89eeacaa8723e6d536d85f9054b1253aa616e4902ddcf0c70446a6",
       "svgUrl": "https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/bnb.svg",
       "svgFile": "assets/emojis/svg/crypto-bnb.svg",
-      "pngFile": "assets\\emojis\\png\\coin_bnb.png",
+      "pngFile": "assets/emojis/png/coin_bnb.png",
       "discordId": null
     }
   ]
