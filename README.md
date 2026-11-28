@@ -41,7 +41,13 @@ npx playwright install chromium
 npm run cwallet:save-session
 ```
 
-브라우저가 열리면 [my.cwallet.com](https://my.cwallet.com)에 로그인해 주세요. 끝나면 `secrets/cwallet-storage-state.json`이 생성됩니다. 결제 PIN은 `.env`의 `CWALLET_PASSWORD`에 적어 주세요. 2차 인증을 쓰시면 `CWALLET_TOTP`에 6자리 코드를 넣거나, 시크릿은 `CWALLET_2FA_SECRET`에 넣어 주세요.
+브라우저가 열리면 [my.cwallet.com](https://my.cwallet.com)에 로그인해 주세요.
+
+- 로그인이 끝나면 `secrets/cwallet-storage-state.json`이 생성됩니다.
+- 결제 PIN은 `.env`의 `CWALLET_PASSWORD`에 적어 주세요.
+- 2차 인증을 쓰시면 둘 중 하나만 넣어 주세요.
+  - `CWALLET_TOTP` — 6자리 코드
+  - `CWALLET_2FA_SECRET` — OTP 시크릿
 
 5. 이모지와 데이터베이스를 준비한 다음 봇을 실행해 주세요.
 
@@ -101,10 +107,35 @@ CWALLET_STORAGE_STATE=secrets/cwallet-storage-state.json
 | `CWALLET_PASSWORD` | Cwallet 결제 PIN |
 | `CWALLET_STORAGE_STATE` | 세션 파일 경로. 비우시면 `secrets/cwallet-storage-state.json`을 사용합니다 |
 
-환율과 김치프리미엄 주소는 비워 두셔도 됩니다. 비우면 업비트와 야후 시세를 사용합니다. 직접 지정하시려면 `USD_KRW_RATE_URL`, `KIMCHI_PREMIUM_URL`을 넣어 주세요. `KIMCHI_SYMBOL`을 비우면 USDT로 계산합니다.
+아래는 비워 두셔도 됩니다. 필요할 때만 `.env`에 넣어 주세요.
 
-패널 이미지를 직접 쓰시려면 `PANEL_IMAGE_URL`과 `EMBED_ICON_URL`에 주소를 넣어 주세요. 비우시면 실행 시 `assets/generated/`에 만들어 둡니다. 잔액 데이터는 `DB/data.db`에 저장되며, 파일 이름만 바꾸시려면 `DATABASE_FILE`을 적어 주세요.
+**시세**
+
+| 이름 | 비웠을 때 |
+|------|-----------|
+| `USD_KRW_RATE_URL` | 업비트 USDT 시세 |
+| `KIMCHI_PREMIUM_URL` | 업비트 BTC 시세 |
+| `KIMCHI_SYMBOL` | `USDT` |
+
+환율 기본값은 업비트, 김치프리미엄의 원/달러는 야후 시세입니다.
+
+**패널 이미지**
+
+| 이름 | 비웠을 때 |
+|------|-----------|
+| `PANEL_IMAGE_URL` | 실행 시 `assets/generated/`에 생성 |
+| `EMBED_ICON_URL` | 실행 시 `assets/generated/`에 생성 |
+
+주소를 넣으시면 그 이미지를 사용합니다.
+
+**데이터베이스**
+
+잔액은 `DB/data.db`에 저장됩니다. 파일 이름만 바꾸시려면 `DATABASE_FILE`을 적어 주세요.
 
 ## 라이선스
 
 라이선스는 `LICENSE` 파일을 봐 주세요. 저작권은 XDAYOUNGX에 있습니다. 본인 서버에서 설치하고 수정해서 사용하실 수 있습니다. 판매, 재배포, 미러, 재라이선스는 허용되지 않습니다.
+
+## 외주 문의
+
+[https://xdayoungx.dev/](https://xdayoungx.dev/)
